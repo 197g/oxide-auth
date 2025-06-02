@@ -59,15 +59,14 @@ impl OAuthState {
     }
 
     /// In larger app, you'd likey wrap it in your own Endpoint instead of `Generic`.
-    pub fn endpoint(&self) -> Generic<impl Registrar + '_, impl Authorizer + '_, impl Issuer + '_> {
+    pub fn endpoint(&self) -> Generic<impl Registrar + '_, impl Authorizer + '_, impl Issuer + '_, Vacant, Vec<Scope>> {
         Generic {
             registrar: self.registrar.lock().unwrap(),
             authorizer: self.authorizer.lock().unwrap(),
             issuer: self.issuer.lock().unwrap(),
             // Solicitor configured later.
             solicitor: Vacant,
-            // Scope configured later.
-            scopes: Vacant,
+            scopes: vec!["default-scope".parse().unwrap()],
             // OAuthResponse is Default
             response: Vacant,
         }
@@ -176,7 +175,7 @@ async fn refresh(
         .map_err(WebError::from)
 }
 
-fn resource_flow(endpoint: Generic<impl Registrar, impl Authorizer, impl Issuer>, req: OAuthResource) -> Result<Grant, Result<OAuthResponse, WebError>> {
+fn resource_flow(endpoint: Generic<impl Registrar, impl Authorizer, impl Issuer, Vacant, Vec<Scope>>, req: OAuthResource) -> Result<Grant, Result<OAuthResponse, WebError>> {
     ResourceFlow::prepare(endpoint)
     .expect("Failed to prepare resource flow")
     .execute(req.into())
