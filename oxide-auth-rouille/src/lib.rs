@@ -68,13 +68,13 @@ impl<'a> WebRequest for Request<'a> {
     type Error = WebError;
     type Response = Response;
 
-    fn query(&mut self) -> Result<Cow<dyn QueryParameter + 'static>, Self::Error> {
+    fn query(&mut self) -> Result<Cow<'_, dyn QueryParameter + 'static>, Self::Error> {
         let query = self.inner.raw_query_string();
         let data = serde_urlencoded::from_str(query).map_err(|_| WebError::Encoding)?;
         Ok(Cow::Owned(data))
     }
 
-    fn urlbody(&mut self) -> Result<Cow<dyn QueryParameter + 'static>, Self::Error> {
+    fn urlbody(&mut self) -> Result<Cow<'_, dyn QueryParameter + 'static>, Self::Error> {
         match self.inner.header("Content-Type") {
             None | Some("application/x-www-form-urlencoded") => (),
             _ => return Err(WebError::Encoding),
@@ -85,7 +85,7 @@ impl<'a> WebRequest for Request<'a> {
         Ok(Cow::Owned(data))
     }
 
-    fn authheader(&mut self) -> Result<Option<Cow<str>>, Self::Error> {
+    fn authheader(&mut self) -> Result<Option<Cow<'_, str>>, Self::Error> {
         Ok(self.inner.header("Authorization").map(|st| st.into()))
     }
 }
