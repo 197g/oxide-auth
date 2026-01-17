@@ -9,7 +9,6 @@ use std::borrow::Cow;
 
 use oxide_auth::endpoint::{QueryParameter, WebRequest, WebResponse};
 
-use rouille;
 use url::Url;
 
 // In the spirit of simplicity, this module does not implement any wrapper structures.  In order to
