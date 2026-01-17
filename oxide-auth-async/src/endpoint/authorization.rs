@@ -336,27 +336,27 @@ where
         self.error.is_none()
     }
 
-    fn client_id(&self) -> Option<Cow<str>> {
+    fn client_id(&self) -> Option<Cow<'_, str>> {
         self.query.unique_value("client_id")
     }
 
-    fn scope(&self) -> Option<Cow<str>> {
+    fn scope(&self) -> Option<Cow<'_, str>> {
         self.query.unique_value("scope")
     }
 
-    fn redirect_uri(&self) -> Option<Cow<str>> {
+    fn redirect_uri(&self) -> Option<Cow<'_, str>> {
         self.query.unique_value("redirect_uri")
     }
 
-    fn state(&self) -> Option<Cow<str>> {
+    fn state(&self) -> Option<Cow<'_, str>> {
         self.query.unique_value("state")
     }
 
-    fn response_type(&self) -> Option<Cow<str>> {
+    fn response_type(&self) -> Option<Cow<'_, str>> {
         self.query.unique_value("response_type")
     }
 
-    fn extension(&self, key: &str) -> Option<Cow<str>> {
+    fn extension(&self, key: &str) -> Option<Cow<'_, str>> {
         self.query.unique_value(key)
     }
 }

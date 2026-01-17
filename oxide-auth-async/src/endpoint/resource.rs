@@ -156,7 +156,7 @@ impl<R: WebRequest> ResourceRequest for WrappedRequest<R> {
         self.error.is_none()
     }
 
-    fn token(&self) -> Option<Cow<str>> {
+    fn token(&self) -> Option<Cow<'_, str>> {
         self.authorization.as_deref().map(Cow::Borrowed)
     }
 }
