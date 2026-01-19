@@ -4,7 +4,7 @@ mod generic;
 
 use std::collections::HashMap;
 
-pub use self::generic::{consent_page_html, open_in_browser, Client, ClientConfig, ClientError};
+pub use self::generic::{consent_page_html, open_in_browser, Client, ClientConfig};
 
 use actix_web::App;
 use actix_web::*;
