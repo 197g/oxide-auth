@@ -177,7 +177,7 @@ impl OwnerSolicitor<CraftedRequest> for Deny {
 }
 
 #[async_trait::async_trait]
-impl<'l> OwnerSolicitor<CraftedRequest> for &'l Allow {
+impl OwnerSolicitor<CraftedRequest> for &Allow {
     async fn check_consent(
         &mut self, _: &mut CraftedRequest, _: Solicitation<'_>,
     ) -> OwnerConsent<CraftedResponse> {
@@ -186,7 +186,7 @@ impl<'l> OwnerSolicitor<CraftedRequest> for &'l Allow {
 }
 
 #[async_trait::async_trait]
-impl<'l> OwnerSolicitor<CraftedRequest> for &'l Deny {
+impl OwnerSolicitor<CraftedRequest> for &Deny {
     async fn check_consent(
         &mut self, _: &mut CraftedRequest, _: Solicitation<'_>,
     ) -> OwnerConsent<CraftedResponse> {
