@@ -596,7 +596,7 @@ impl<'a, R: WebRequest, E: Endpoint<R>> Endpoint<R> for &'a mut E {
     }
 }
 
-impl<'a, R: WebRequest, E: Endpoint<R> + 'a> Endpoint<R> for Box<E> {
+impl<R: WebRequest, E: Endpoint<R>> Endpoint<R> for Box<E> {
     type Error = E::Error;
 
     fn registrar(&self) -> Option<&dyn Registrar> {
@@ -646,7 +646,7 @@ impl<'a, W: WebRequest, S: OwnerSolicitor<W> + 'a + ?Sized> OwnerSolicitor<W> fo
     }
 }
 
-impl<'a, W: WebRequest, S: OwnerSolicitor<W> + 'a + ?Sized> OwnerSolicitor<W> for Box<S> {
+impl<W: WebRequest, S: OwnerSolicitor<W> + ?Sized> OwnerSolicitor<W> for Box<S> {
     fn check_consent(
         &mut self, request: &mut W, solicitation: Solicitation,
     ) -> OwnerConsent<W::Response> {
@@ -678,7 +678,7 @@ impl<'a, W: WebRequest, S: Scopes<W> + 'a + ?Sized> Scopes<W> for &'a mut S {
     }
 }
 
-impl<'a, W: WebRequest, S: Scopes<W> + 'a + ?Sized> Scopes<W> for Box<S> {
+impl<W: WebRequest, S: Scopes<W> + ?Sized> Scopes<W> for Box<S> {
     fn scopes(&mut self, request: &mut W) -> &[Scope] {
         (**self).scopes(request)
     }
