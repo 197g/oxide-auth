@@ -187,9 +187,9 @@ impl<'a, 'b, 'c: 'b> From<&'a mut Request<'b, 'c>> for OAuthRequest<'a, 'b, 'c> 
     }
 }
 
-impl<'a, 'b, 'c: 'b> Into<&'a mut Request<'b, 'c>> for OAuthRequest<'a, 'b, 'c> {
-    fn into(self) -> &'a mut Request<'b, 'c> {
-        self.0
+impl<'a, 'b, 'c: 'b> From<OAuthRequest<'a, 'b, 'c>> for &'a mut Request<'b, 'c> {
+    fn from(val: OAuthRequest<'a, 'b, 'c>) -> &'a mut Request<'b, 'c> {
+        val.0
     }
 }
 
@@ -199,9 +199,9 @@ impl From<Response> for OAuthResponse {
     }
 }
 
-impl Into<Response> for OAuthResponse {
-    fn into(self) -> Response {
-        self.0
+impl From<OAuthResponse> for Response {
+    fn from(val: OAuthResponse) -> Response {
+        val.0
     }
 }
 
@@ -228,8 +228,8 @@ impl From<IronError> for OAuthError {
     }
 }
 
-impl Into<IronError> for OAuthError {
-    fn into(self) -> IronError {
-        self.0
+impl From<OAuthError> for IronError {
+    fn from(val: OAuthError) -> Self {
+        val.0
     }
 }
