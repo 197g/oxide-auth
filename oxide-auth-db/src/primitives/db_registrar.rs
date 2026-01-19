@@ -262,8 +262,7 @@ mod tests {
             .expect("Authorization of public client has changed");
         oauth_service
             .check(public_id, Some(b""))
-            .err()
-            .expect("Authorization with password succeeded");
+            .expect_err("Authorization with password succeeded");
 
         let private_client = Client::confidential(
             private_id,
@@ -279,7 +278,6 @@ mod tests {
             .expect("Authorization with right password did not succeed");
         oauth_service
             .check(private_id, Some(b"Not the private passphrase"))
-            .err()
-            .expect("Authorization succeed with wrong password");
+            .expect_err("Authorization succeed with wrong password");
     }
 }
