@@ -31,7 +31,7 @@ pub trait OauthClientDBRepository {
 //                             Implementations of DB Registrars                                  //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-static DEFAULT_PASSWORD_POLICY: Lazy<Argon2> = Lazy::new(|| Argon2::default());
+static DEFAULT_PASSWORD_POLICY: Lazy<Argon2> = Lazy::new(Argon2::default);
 
 impl DBRegistrar {
     /// Create an DB connection recording to features.
