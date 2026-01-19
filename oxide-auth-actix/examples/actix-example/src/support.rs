@@ -49,10 +49,7 @@ async fn endpoint_impl(
         Some(code) => code.clone(),
     };
 
-    let auth_handle = tokio::task::spawn_blocking(move || {
-        let res = state.authorize(&code);
-        res
-    });
+    let auth_handle = tokio::task::spawn_blocking(move || state.authorize(&code));
     let auth_result = auth_handle.await.unwrap();
 
     match auth_result {
@@ -62,10 +59,7 @@ async fn endpoint_impl(
 }
 
 async fn refresh(state: web::Data<Client>) -> impl Responder {
-    let refresh_handle = tokio::task::spawn_blocking(move || {
-        let res = state.refresh();
-        res
-    });
+    let refresh_handle = tokio::task::spawn_blocking(move || state.refresh());
     let refresh_result = refresh_handle.await.unwrap();
 
     match refresh_result {
@@ -77,10 +71,7 @@ async fn refresh(state: web::Data<Client>) -> impl Responder {
 async fn get_with_token(state: web::Data<Client>) -> impl Responder {
     let html = state.as_html();
 
-    let protected_page_handle = tokio::task::spawn_blocking(move || {
-        let res = state.retrieve_protected_page();
-        res
-    });
+    let protected_page_handle = tokio::task::spawn_blocking(move || state.retrieve_protected_page());
     let protected_page_result = protected_page_handle.await.unwrap();
 
     let protected_page = match protected_page_result {
