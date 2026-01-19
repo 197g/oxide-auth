@@ -91,7 +91,7 @@ fn endpoint(state: Arc<State>, req: &mut Request) -> IronResult<Response> {
         }
     };
 
-    if token_map.get("error").is_some() {
+    if token_map.contains_key("error") {
         return Ok(Response::with((Status::BadRequest, token)));
     }
 
