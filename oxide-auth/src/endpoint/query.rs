@@ -289,7 +289,7 @@ unsafe impl<V: UniqueValue> UniqueValue for [V] {
         if self.len() > 1 {
             None
         } else {
-            self.get(0).and_then(V::get_unique)
+            self.first().and_then(V::get_unique)
         }
     }
 }
@@ -317,7 +317,7 @@ unsafe impl<V: UniqueValue> UniqueValue for Vec<V> {
         if self.len() > 1 {
             None
         } else {
-            self.get(0).and_then(V::get_unique)
+            self.first().and_then(V::get_unique)
         }
     }
 }
