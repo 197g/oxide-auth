@@ -59,7 +59,7 @@ impl DBRegistrar {
     }
 
     // This is not an instance method because it needs to borrow the box but register needs &mut
-    fn current_policy<'a>(policy: &'a Option<Box<dyn PasswordPolicy>>) -> &'a dyn PasswordPolicy {
+    fn current_policy(policy: &Option<Box<dyn PasswordPolicy>>) -> &dyn PasswordPolicy {
         policy
             .as_ref()
             .map(|boxed| &**boxed)
