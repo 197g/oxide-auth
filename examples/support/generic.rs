@@ -36,7 +36,7 @@ pub fn open_in_browser(port: u16) {
     } else if cfg!(target_os = "macos") {
         Ok("open")
     } else {
-        Err(Error::new(ErrorKind::Other, "Open not supported"))
+        Err(Error::other("Open not supported"))
     };
 
     open_with
@@ -45,7 +45,7 @@ pub fn open_in_browser(port: u16) {
             if status.success() {
                 Ok(())
             } else {
-                Err(Error::new(ErrorKind::Other, "Non zero status"))
+                Err(Error::other("Non zero status"))
             }
         })
         .unwrap_or_else(|_| println!("Please navigate to {}", target_address));
