@@ -144,7 +144,7 @@ fn pkce_correct_verifier() {
 
     let correct_authorization = CraftedRequest {
         query: Some(
-            vec![
+            [
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("redirect_uri", EXAMPLE_REDIRECT_URI),
                 ("response_type", "code"),
@@ -161,7 +161,7 @@ fn pkce_correct_verifier() {
     let correct_access = CraftedRequest {
         query: None,
         urlbody: Some(
-            vec![
+            [
                 ("grant_type", "authorization_code"),
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("code", &setup.auth_token),
@@ -183,7 +183,7 @@ fn pkce_failed_verifier() {
 
     let correct_authorization = CraftedRequest {
         query: Some(
-            vec![
+            [
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("redirect_uri", EXAMPLE_REDIRECT_URI),
                 ("response_type", "code"),
@@ -200,7 +200,7 @@ fn pkce_failed_verifier() {
     let correct_access = CraftedRequest {
         query: None,
         urlbody: Some(
-            vec![
+            [
                 ("grant_type", "authorization_code"),
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("code", &setup.auth_token),
