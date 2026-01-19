@@ -93,7 +93,7 @@ impl Value {
     /// but consists only of the key, and `Some(_)` otherwise.
     pub fn public_value(&self) -> Result<Option<&str>, ()> {
         match self {
-            Value::Public(Some(content)) => Ok(Some(&content)),
+            Value::Public(Some(content)) => Ok(Some(content)),
             Value::Public(None) => Ok(None),
             _ => Err(()),
         }
@@ -116,7 +116,7 @@ impl Value {
     /// but consists only of the key, and `Some(_)` otherwise.
     pub fn private_value(&self) -> Result<Option<&str>, ()> {
         match self {
-            Value::Private(Some(content)) => Ok(Some(&content)),
+            Value::Private(Some(content)) => Ok(Some(content)),
             Value::Private(None) => Ok(None),
             _ => Err(()),
         }

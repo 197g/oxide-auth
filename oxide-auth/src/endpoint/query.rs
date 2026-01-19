@@ -259,7 +259,7 @@ unsafe impl UniqueValue for str {
 
 unsafe impl UniqueValue for String {
     fn get_unique(&self) -> Option<&str> {
-        Some(&self)
+        Some(self)
     }
 }
 

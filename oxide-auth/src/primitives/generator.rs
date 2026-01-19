@@ -225,13 +225,13 @@ impl<'a> TaggedAssertion<'a> {
 
 impl<'a, T: TagGrant + ?Sized + 'a> TagGrant for Box<T> {
     fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, ()> {
-        (&mut **self).tag(counter, grant)
+        (**self).tag(counter, grant)
     }
 }
 
 impl<'a, T: TagGrant + ?Sized + 'a> TagGrant for &'a mut T {
     fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, ()> {
-        (&mut **self).tag(counter, grant)
+        (**self).tag(counter, grant)
     }
 }
 

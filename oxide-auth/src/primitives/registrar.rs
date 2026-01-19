@@ -101,7 +101,7 @@ impl<'de> Deserialize<'de> for ExactUrl {
         D: serde::Deserializer<'de>,
     {
         let string: &str = Deserialize::deserialize(deserializer)?;
-        core::str::FromStr::from_str(&string).map_err(serde::de::Error::custom)
+        core::str::FromStr::from_str(string).map_err(serde::de::Error::custom)
     }
 }
 
@@ -562,7 +562,7 @@ impl<'a> RegisteredClient<'a> {
     pub fn check_authentication(&self, passphrase: Option<&[u8]>) -> Result<(), RegistrarError> {
         match (passphrase, &self.client.encoded_client) {
             (None, &ClientType::Public) => Ok(()),
-            (Some(provided), &ClientType::Confidential { passdata: ref stored }) => {
+            (Some(provided), ClientType::Confidential { passdata: ref stored }) => {
                 self.policy.check(&self.client.client_id, provided, stored)
             }
             _ => Err(RegistrarError::Unspecified),

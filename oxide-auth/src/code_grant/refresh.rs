@@ -301,7 +301,7 @@ impl Refresh {
                 client: &grant.client_id,
                 pass: None,
             },
-            RefreshState::Recovering { token, .. } => Output::RecoverRefresh { token: &token },
+            RefreshState::Recovering { token, .. } => Output::RecoverRefresh { token },
             RefreshState::Issuing { token, grant, .. } => Output::Refresh {
                 token,
                 grant: grant.clone(),

@@ -207,7 +207,7 @@ impl Authorization {
             },
             AuthorizationState::Extending { .. } => Output::Extend,
             AuthorizationState::Negotiating { bound_client } => Output::Negotiate {
-                bound_client: &bound_client,
+                bound_client,
                 scope: self.scope.clone(),
             },
             AuthorizationState::Pending {

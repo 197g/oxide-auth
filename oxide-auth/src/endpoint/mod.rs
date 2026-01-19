@@ -211,7 +211,7 @@ impl<'flow> Solicitation<'flow> {
     pub fn state(&self) -> Option<&str> {
         match self.state {
             None => None,
-            Some(ref state) => Some(&state),
+            Some(ref state) => Some(state),
         }
     }
 

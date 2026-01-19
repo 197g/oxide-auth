@@ -345,9 +345,9 @@ impl AccessToken {
 
         match &authorization {
             Authorization::None => {}
-            Authorization::Username(username) => credentials.unauthenticated(&username),
+            Authorization::Username(username) => credentials.unauthenticated(username),
             Authorization::UsernamePassword(username, password) => {
-                credentials.authenticate(&username, &password)
+                credentials.authenticate(username, password)
             }
         }
 
