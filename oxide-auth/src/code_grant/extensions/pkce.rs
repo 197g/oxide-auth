@@ -9,10 +9,10 @@ use subtle::ConstantTimeEq;
 /// Proof Key for Code Exchange by OAuth Public Clients
 ///
 /// > Auth 2.0 public clients utilizing the Authorization Code Grant are
-/// susceptible to the authorization code interception attack.  This
-/// specification describes the attack as well as a technique to mitigate
-/// against the threat through the use of Proof Key for Code Exchange
-/// (PKCE, pronounced "pixy").
+/// > susceptible to the authorization code interception attack.  This
+/// > specification describes the attack as well as a technique to mitigate
+/// > against the threat through the use of Proof Key for Code Exchange
+/// > (PKCE, pronounced "pixy").
 ///
 /// (from the respective [RFC 7636])
 ///

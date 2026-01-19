@@ -40,6 +40,7 @@ use serde::{Deserialize, Serialize};
 ///   - The character '!'
 ///   - The character range '\x32' to '\x5b' which includes numbers and upper case letters
 ///   - The character range '\x5d' to '\x7e' which includes lower case letters
+///
 /// Individual scope-tokens are separated by spaces.
 ///
 /// In particular, the characters '\x22' (`"`) and '\x5c' (`\`)  are not allowed.
@@ -106,6 +107,7 @@ pub enum ParseScopeErr {
     ///   - The character '!'
     ///   - The character range '\x32' to '\x5b' which includes numbers and upper case letters
     ///   - The character range '\x5d' to '\x7e' which includes lower case letters
+    ///
     /// Individual scope-tokens are separated by spaces.
     ///
     /// In particular, the characters '\x22' (`"`) and '\x5c' (`\`)  are not allowed.
