@@ -565,11 +565,11 @@ impl Error {
     }
 }
 
-impl Into<Url> for ErrorUrl {
+impl From<ErrorUrl> for Url {
     /// Finalize the error url by saving its parameters in the query part of the redirect_uri
-    fn into(self) -> Url {
-        let mut url = self.base_uri;
-        url.query_pairs_mut().extend_pairs(self.error.into_iter());
+    fn from(val: ErrorUrl) -> Self {
+        let mut url = val.base_uri;
+        url.query_pairs_mut().extend_pairs(val.error.into_iter());
         url
     }
 }
