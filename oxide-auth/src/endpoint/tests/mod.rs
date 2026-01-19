@@ -198,7 +198,7 @@ where
     V: AsRef<str> + 'r,
 {
     fn to_single_value_query(self) -> HashMap<String, Vec<String>> {
-        self.map(|&(ref k, ref v)| (k.as_ref().to_string(), vec![v.as_ref().to_string()]))
+        self.map(|(k, v)| (k.as_ref().to_string(), vec![v.as_ref().to_string()]))
             .collect()
     }
 }
