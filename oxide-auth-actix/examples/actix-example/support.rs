@@ -1,5 +1,5 @@
 #[rustfmt::skip]
-#[path = "../../../../examples/support/generic.rs"]
+#[path = "../../../examples/support/generic.rs"]
 mod generic;
 
 use std::collections::HashMap;
