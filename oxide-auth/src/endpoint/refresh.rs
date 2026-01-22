@@ -228,25 +228,25 @@ impl<'a, R: WebRequest> Request for WrappedRequest<'a, R> {
         self.error.is_none()
     }
 
-    fn refresh_token(&self) -> Option<Cow<str>> {
+    fn refresh_token(&self) -> Option<Cow<'_, str>> {
         self.body.unique_value("refresh_token")
     }
 
-    fn authorization(&self) -> Option<(Cow<str>, Cow<[u8]>)> {
+    fn authorization(&self) -> Option<(Cow<'_, str>, Cow<'_, [u8]>)> {
         self.authorization
             .as_ref()
             .map(|auth| (auth.0.as_str().into(), auth.1.as_slice().into()))
     }
 
-    fn scope(&self) -> Option<Cow<str>> {
+    fn scope(&self) -> Option<Cow<'_, str>> {
         self.body.unique_value("scope")
     }
 
-    fn grant_type(&self) -> Option<Cow<str>> {
+    fn grant_type(&self) -> Option<Cow<'_, str>> {
         self.body.unique_value("grant_type")
     }
 
-    fn extension(&self, key: &str) -> Option<Cow<str>> {
+    fn extension(&self, key: &str) -> Option<Cow<'_, str>> {
         self.body.unique_value(key)
     }
 }

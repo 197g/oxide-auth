@@ -20,22 +20,22 @@ pub trait Request {
     fn valid(&self) -> bool;
 
     /// Identity of the client trying to gain an oauth token.
-    fn client_id(&self) -> Option<Cow<str>>;
+    fn client_id(&self) -> Option<Cow<'_, str>>;
 
     /// Optionally specifies the requested scope
-    fn scope(&self) -> Option<Cow<str>>;
+    fn scope(&self) -> Option<Cow<'_, str>>;
 
     /// Valid request have (one of) the registered redirect urls for this client.
-    fn redirect_uri(&self) -> Option<Cow<str>>;
+    fn redirect_uri(&self) -> Option<Cow<'_, str>>;
 
     /// Optional parameter the client can use to identify the redirected user-agent.
-    fn state(&self) -> Option<Cow<str>>;
+    fn state(&self) -> Option<Cow<'_, str>>;
 
     /// The method requested, valid requests MUST return `code`
-    fn response_type(&self) -> Option<Cow<str>>;
+    fn response_type(&self) -> Option<Cow<'_, str>>;
 
     /// Retrieve an additional parameter used in an extension
-    fn extension(&self, key: &str) -> Option<Cow<str>>;
+    fn extension(&self, key: &str) -> Option<Cow<'_, str>>;
 }
 
 /// A system of addons provided additional data.
@@ -207,7 +207,7 @@ impl Authorization {
             },
             AuthorizationState::Extending { .. } => Output::Extend,
             AuthorizationState::Negotiating { bound_client } => Output::Negotiate {
-                bound_client: &bound_client,
+                bound_client,
                 scope: self.scope.clone(),
             },
             AuthorizationState::Pending {
@@ -565,11 +565,11 @@ impl Error {
     }
 }
 
-impl Into<Url> for ErrorUrl {
+impl From<ErrorUrl> for Url {
     /// Finalize the error url by saving its parameters in the query part of the redirect_uri
-    fn into(self) -> Url {
-        let mut url = self.base_uri;
-        url.query_pairs_mut().extend_pairs(self.error.into_iter());
+    fn from(val: ErrorUrl) -> Self {
+        let mut url = val.base_uri;
+        url.query_pairs_mut().extend_pairs(val.error);
         url
     }
 }

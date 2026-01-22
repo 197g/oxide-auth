@@ -77,21 +77,21 @@ impl WebRequest for CraftedRequest {
     type Response = CraftedResponse;
     type Error = CraftedError;
 
-    fn query(&mut self) -> Result<Cow<dyn QueryParameter + 'static>, Self::Error> {
+    fn query(&mut self) -> Result<Cow<'_, dyn QueryParameter + 'static>, Self::Error> {
         self.query
             .as_ref()
             .map(|hm| Cow::Borrowed(hm as &dyn QueryParameter))
             .ok_or(CraftedError::Crafted)
     }
 
-    fn urlbody(&mut self) -> Result<Cow<dyn QueryParameter + 'static>, Self::Error> {
+    fn urlbody(&mut self) -> Result<Cow<'_, dyn QueryParameter + 'static>, Self::Error> {
         self.urlbody
             .as_ref()
             .map(|hm| Cow::Borrowed(hm as &dyn QueryParameter))
             .ok_or(CraftedError::Crafted)
     }
 
-    fn authheader(&mut self) -> Result<Option<Cow<str>>, Self::Error> {
+    fn authheader(&mut self) -> Result<Option<Cow<'_, str>>, Self::Error> {
         Ok(self.auth.as_ref().map(|bearer| bearer.as_str().into()))
     }
 }

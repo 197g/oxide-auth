@@ -62,13 +62,13 @@ pub trait ClientCredentialsAddon: GrantExtension {
     fn execute(&self, request: &dyn ClientCredentialsRequest) -> AddonResult;
 }
 
-impl<'a, T: AuthorizationAddon + ?Sized> AuthorizationAddon for &'a T {
+impl<T: AuthorizationAddon + ?Sized> AuthorizationAddon for &T {
     fn execute(&self, request: &dyn AuthorizationRequest) -> AddonResult {
         (**self).execute(request)
     }
 }
 
-impl<'a, T: AuthorizationAddon + ?Sized> AuthorizationAddon for Cow<'a, T>
+impl<'a, T: AuthorizationAddon> AuthorizationAddon for Cow<'a, T>
 where
     T: Clone + ToOwned,
 {
@@ -95,13 +95,13 @@ impl<T: AuthorizationAddon + ?Sized> AuthorizationAddon for Rc<T> {
     }
 }
 
-impl<'a, T: AccessTokenAddon + ?Sized> AccessTokenAddon for &'a T {
+impl<T: AccessTokenAddon + ?Sized> AccessTokenAddon for &T {
     fn execute(&self, request: &dyn AccessTokenRequest, data: Option<Value>) -> AddonResult {
         (**self).execute(request, data)
     }
 }
 
-impl<'a, T: AccessTokenAddon + ?Sized> AccessTokenAddon for Cow<'a, T>
+impl<'a, T: AccessTokenAddon> AccessTokenAddon for Cow<'a, T>
 where
     T: Clone + ToOwned,
 {
@@ -128,13 +128,13 @@ impl<T: AccessTokenAddon + ?Sized> AccessTokenAddon for Rc<T> {
     }
 }
 
-impl<'a, T: ClientCredentialsAddon + ?Sized> ClientCredentialsAddon for &'a T {
+impl<T: ClientCredentialsAddon + ?Sized> ClientCredentialsAddon for &T {
     fn execute(&self, request: &dyn ClientCredentialsRequest) -> AddonResult {
         (**self).execute(request)
     }
 }
 
-impl<'a, T: ClientCredentialsAddon + ?Sized> ClientCredentialsAddon for Cow<'a, T>
+impl<'a, T: ClientCredentialsAddon> ClientCredentialsAddon for Cow<'a, T>
 where
     T: Clone + ToOwned,
 {

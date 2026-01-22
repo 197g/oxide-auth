@@ -18,6 +18,8 @@ use serde::Deserializer;
 /// * `HashMap<String, Vec<String>>`
 /// * `HashMap<Cow<'static, str>, Cow<'static, str>>`
 ///
+/// # Safety
+///
 /// You should generally not have to implement this trait yourself, and if you do there are
 /// additional requirements on your implementation to guarantee standard conformance. Therefore the
 /// trait is marked as `unsafe`.
@@ -28,7 +30,7 @@ pub unsafe trait QueryParameter {
     /// conformance to the RFC. Afaik it prevents potentially subverting validation middleware,
     /// order dependent processing, or simple confusion between different components who parse the
     /// query string from different ends.
-    fn unique_value(&self, key: &str) -> Option<Cow<str>>;
+    fn unique_value(&self, key: &str) -> Option<Cow<'_, str>>;
 
     /// Guarantees that one can grab an owned copy.
     fn normalize(&self) -> NormalizedParameter;
@@ -54,7 +56,7 @@ pub struct NormalizedParameter {
 }
 
 unsafe impl QueryParameter for NormalizedParameter {
-    fn unique_value(&self, key: &str) -> Option<Cow<str>> {
+    fn unique_value(&self, key: &str) -> Option<Cow<'_, str>> {
         self.inner
             .get(key)
             .and_then(|val| val.as_ref().map(Cow::as_ref).map(Cow::Borrowed))
@@ -166,6 +168,12 @@ impl ToOwned for dyn QueryParameter + Send {
 ///
 /// If this were done with slices, that would require choosing a particular
 /// value type of the underlying slice e.g. `[String]`.
+///
+/// # Safety
+///
+/// You should generally not have to implement this trait yourself, and if you do there are
+/// additional requirements on your implementation to guarantee standard conformance. Therefore the
+/// trait is marked as `unsafe`.
 pub unsafe trait UniqueValue {
     /// Borrow the unique value reference.
     fn get_unique(&self) -> Option<&str>;
@@ -176,7 +184,7 @@ where
     K: Borrow<str> + Eq + Hash,
     V: UniqueValue + Eq + Hash,
 {
-    fn unique_value(&self, key: &str) -> Option<Cow<str>> {
+    fn unique_value(&self, key: &str) -> Option<Cow<'_, str>> {
         self.get(key).and_then(V::get_unique).map(Cow::Borrowed)
     }
 
@@ -202,7 +210,7 @@ where
     K: Borrow<str> + Eq + Hash,
     V: Borrow<str> + Eq + Hash,
 {
-    fn unique_value(&self, key: &str) -> Option<Cow<str>> {
+    fn unique_value(&self, key: &str) -> Option<Cow<'_, str>> {
         let mut value = None;
 
         for entry in self.iter() {
@@ -220,7 +228,7 @@ where
     fn normalize(&self) -> NormalizedParameter {
         let mut params = NormalizedParameter::default();
         self.iter()
-            .map(|&(ref key, ref val)| {
+            .map(|(key, val)| {
                 (
                     Cow::Owned(key.borrow().to_string()),
                     Cow::Owned(val.borrow().to_string()),
@@ -232,7 +240,7 @@ where
 }
 
 unsafe impl<'a, Q: QueryParameter + 'a + ?Sized> QueryParameter for &'a Q {
-    fn unique_value(&self, key: &str) -> Option<Cow<str>> {
+    fn unique_value(&self, key: &str) -> Option<Cow<'_, str>> {
         (**self).unique_value(key)
     }
 
@@ -242,7 +250,7 @@ unsafe impl<'a, Q: QueryParameter + 'a + ?Sized> QueryParameter for &'a Q {
 }
 
 unsafe impl<'a, Q: QueryParameter + 'a + ?Sized> QueryParameter for &'a mut Q {
-    fn unique_value(&self, key: &str) -> Option<Cow<str>> {
+    fn unique_value(&self, key: &str) -> Option<Cow<'_, str>> {
         (**self).unique_value(key)
     }
 
@@ -259,11 +267,11 @@ unsafe impl UniqueValue for str {
 
 unsafe impl UniqueValue for String {
     fn get_unique(&self) -> Option<&str> {
-        Some(&self)
+        Some(self)
     }
 }
 
-unsafe impl<'a, V> UniqueValue for &'a V
+unsafe impl<V> UniqueValue for &V
 where
     V: AsRef<str> + ?Sized,
 {
@@ -289,7 +297,7 @@ unsafe impl<V: UniqueValue> UniqueValue for [V] {
         if self.len() > 1 {
             None
         } else {
-            self.get(0).and_then(V::get_unique)
+            self.first().and_then(V::get_unique)
         }
     }
 }
@@ -317,7 +325,7 @@ unsafe impl<V: UniqueValue> UniqueValue for Vec<V> {
         if self.len() > 1 {
             None
         } else {
-            self.get(0).and_then(V::get_unique)
+            self.first().and_then(V::get_unique)
         }
     }
 }

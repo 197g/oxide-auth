@@ -209,10 +209,7 @@ impl<'flow> Solicitation<'flow> {
     /// This will need to be provided to the response back to the client so it must be preserved
     /// across a redirect or a consent screen presented by the user agent.
     pub fn state(&self) -> Option<&str> {
-        match self.state {
-            None => None,
-            Some(ref state) => Some(&state),
-        }
+        self.state.as_ref().map(|x| x as _)
     }
 
     /// Create a new solicitation request from a pre grant.
@@ -303,16 +300,16 @@ pub trait WebRequest {
     ///
     /// An Err return value indicates a malformed query or an otherwise malformed WebRequest. Note
     /// that an empty query should result in `Ok(HashMap::new())` instead of an Err.
-    fn query(&mut self) -> Result<Cow<dyn QueryParameter + 'static>, Self::Error>;
+    fn query(&mut self) -> Result<Cow<'_, dyn QueryParameter + 'static>, Self::Error>;
 
     /// Retrieve the parsed `application/x-form-urlencoded` body of the request.
     ///
     /// An Err value / indicates a malformed body or a different Content-Type.
-    fn urlbody(&mut self) -> Result<Cow<dyn QueryParameter + 'static>, Self::Error>;
+    fn urlbody(&mut self) -> Result<Cow<'_, dyn QueryParameter + 'static>, Self::Error>;
 
     /// Contents of the authorization header or none if none exists. An Err value indicates a
     /// malformed header or request.
-    fn authheader(&mut self) -> Result<Option<Cow<str>>, Self::Error>;
+    fn authheader(&mut self) -> Result<Option<Cow<'_, str>>, Self::Error>;
 }
 
 /// Response representation into which the Request is transformed by the code_grant types.
@@ -542,24 +539,24 @@ fn reborrow<'a, T>(opt: &'a mut Option<&mut T>) -> Option<&'a mut T> {
     }
 }
 
-impl<'a, W: WebRequest> WebRequest for &'a mut W {
+impl<W: WebRequest> WebRequest for &mut W {
     type Error = W::Error;
     type Response = W::Response;
 
-    fn query(&mut self) -> Result<Cow<dyn QueryParameter + 'static>, Self::Error> {
+    fn query(&mut self) -> Result<Cow<'_, dyn QueryParameter + 'static>, Self::Error> {
         (**self).query()
     }
 
-    fn urlbody(&mut self) -> Result<Cow<dyn QueryParameter + 'static>, Self::Error> {
+    fn urlbody(&mut self) -> Result<Cow<'_, dyn QueryParameter + 'static>, Self::Error> {
         (**self).urlbody()
     }
 
-    fn authheader(&mut self) -> Result<Option<Cow<str>>, Self::Error> {
+    fn authheader(&mut self) -> Result<Option<Cow<'_, str>>, Self::Error> {
         (**self).authheader()
     }
 }
 
-impl<'a, R: WebRequest, E: Endpoint<R>> Endpoint<R> for &'a mut E {
+impl<R: WebRequest, E: Endpoint<R>> Endpoint<R> for &mut E {
     type Error = E::Error;
 
     fn registrar(&self) -> Option<&dyn Registrar> {
@@ -599,7 +596,7 @@ impl<'a, R: WebRequest, E: Endpoint<R>> Endpoint<R> for &'a mut E {
     }
 }
 
-impl<'a, R: WebRequest, E: Endpoint<R> + 'a> Endpoint<R> for Box<E> {
+impl<R: WebRequest, E: Endpoint<R>> Endpoint<R> for Box<E> {
     type Error = E::Error;
 
     fn registrar(&self) -> Option<&dyn Registrar> {
@@ -649,7 +646,7 @@ impl<'a, W: WebRequest, S: OwnerSolicitor<W> + 'a + ?Sized> OwnerSolicitor<W> fo
     }
 }
 
-impl<'a, W: WebRequest, S: OwnerSolicitor<W> + 'a + ?Sized> OwnerSolicitor<W> for Box<S> {
+impl<W: WebRequest, S: OwnerSolicitor<W> + ?Sized> OwnerSolicitor<W> for Box<S> {
     fn check_consent(
         &mut self, request: &mut W, solicitation: Solicitation,
     ) -> OwnerConsent<W::Response> {
@@ -669,7 +666,7 @@ impl<W: WebRequest> Scopes<W> for Vec<Scope> {
     }
 }
 
-impl<'a, W: WebRequest> Scopes<W> for &'a [Scope] {
+impl<W: WebRequest> Scopes<W> for &[Scope] {
     fn scopes(&mut self, _: &mut W) -> &[Scope] {
         self
     }
@@ -681,7 +678,7 @@ impl<'a, W: WebRequest, S: Scopes<W> + 'a + ?Sized> Scopes<W> for &'a mut S {
     }
 }
 
-impl<'a, W: WebRequest, S: Scopes<W> + 'a + ?Sized> Scopes<W> for Box<S> {
+impl<W: WebRequest, S: Scopes<W> + ?Sized> Scopes<W> for Box<S> {
     fn scopes(&mut self, request: &mut W) -> &[Scope] {
         (**self).scopes(request)
     }

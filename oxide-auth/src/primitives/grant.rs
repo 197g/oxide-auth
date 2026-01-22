@@ -93,7 +93,7 @@ impl Value {
     /// but consists only of the key, and `Some(_)` otherwise.
     pub fn public_value(&self) -> Result<Option<&str>, ()> {
         match self {
-            Value::Public(Some(content)) => Ok(Some(&content)),
+            Value::Public(Some(content)) => Ok(Some(content)),
             Value::Public(None) => Ok(None),
             _ => Err(()),
         }
@@ -116,7 +116,7 @@ impl Value {
     /// but consists only of the key, and `Some(_)` otherwise.
     pub fn private_value(&self) -> Result<Option<&str>, ()> {
         match self {
-            Value::Private(Some(content)) => Ok(Some(&content)),
+            Value::Private(Some(content)) => Ok(Some(content)),
             Value::Private(None) => Ok(None),
             _ => Err(()),
         }
@@ -160,14 +160,14 @@ impl Extensions {
     }
 
     /// Iterate of the public extensions whose presence and content is not secret.
-    pub fn public(&self) -> PublicExtensions {
+    pub fn public(&self) -> PublicExtensions<'_> {
         PublicExtensions {
             iter: self.extensions.iter(),
         }
     }
 
     /// Iterate of the private extensions whose presence and content must not be revealed.
-    pub fn private(&self) -> PrivateExtensions {
+    pub fn private(&self) -> PrivateExtensions<'_> {
         PrivateExtensions(self.extensions.iter())
     }
 }
@@ -211,13 +211,13 @@ impl<'a> Iterator for PrivateExtensions<'a> {
     }
 }
 
-impl<'a, T: GrantExtension + ?Sized> GrantExtension for &'a T {
+impl<T: GrantExtension + ?Sized> GrantExtension for &T {
     fn identifier(&self) -> &'static str {
         (**self).identifier()
     }
 }
 
-impl<'a, T: GrantExtension + ?Sized> GrantExtension for Cow<'a, T>
+impl<'a, T: GrantExtension> GrantExtension for Cow<'a, T>
 where
     T: Clone + ToOwned,
 {

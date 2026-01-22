@@ -25,19 +25,19 @@ pub trait Request {
     fn valid(&self) -> bool;
 
     /// The refresh token with which to refresh.
-    fn refresh_token(&self) -> Option<Cow<str>>;
+    fn refresh_token(&self) -> Option<Cow<'_, str>>;
 
     /// Optionally specifies the requested scope
-    fn scope(&self) -> Option<Cow<str>>;
+    fn scope(&self) -> Option<Cow<'_, str>>;
 
     /// Valid requests have this set to "refresh_token"
-    fn grant_type(&self) -> Option<Cow<str>>;
+    fn grant_type(&self) -> Option<Cow<'_, str>>;
 
     /// User:password of a basic authorization header.
-    fn authorization(&self) -> Option<(Cow<str>, Cow<[u8]>)>;
+    fn authorization(&self) -> Option<(Cow<'_, str>, Cow<'_, [u8]>)>;
 
     /// Retrieve an additional parameter used in an extension
-    fn extension(&self, key: &str) -> Option<Cow<str>>;
+    fn extension(&self, key: &str) -> Option<Cow<'_, str>>;
 }
 
 /// The specific endpoint trait for refreshing.
@@ -82,9 +82,9 @@ pub struct BearerToken(RefreshedToken, String);
 /// 1. Ensure the request is valid based on the basic requirements (includes required parameters)
 /// 2. Check any included authentication
 /// 3. Try to recover the refresh token
-///     3.1. Check that it belongs to the authenticated client
-///     3.2. If there was no authentication, assert token does not require authentication
-///     3.3. Check the intrinsic validity (timestamp, scope)
+///    3.1. Check that it belongs to the authenticated client
+///    3.2. If there was no authentication, assert token does not require authentication
+///    3.3. Check the intrinsic validity (timestamp, scope)
 /// 4. Query the backend for a renewed (bearer) token
 #[derive(Debug)]
 pub struct Refresh {
@@ -301,7 +301,7 @@ impl Refresh {
                 client: &grant.client_id,
                 pass: None,
             },
-            RefreshState::Recovering { token, .. } => Output::RecoverRefresh { token: &token },
+            RefreshState::Recovering { token, .. } => Output::RecoverRefresh { token },
             RefreshState::Issuing { token, grant, .. } => Output::Refresh {
                 token,
                 grant: grant.clone(),
@@ -324,9 +324,9 @@ impl<'req> Input<'req> {
 /// 1. Ensure the request is valid based on the basic requirements (includes required parameters)
 /// 2. Check any included authentication
 /// 3. Try to recover the refresh token
-///     3.1. Check that it belongs to the authenticated client
-///     3.2. If there was no authentication, assert token does not require authentication
-///     3.3. Check the intrinsic validity (timestamp, scope)
+///    3.1. Check that it belongs to the authenticated client
+///    3.2. If there was no authentication, assert token does not require authentication
+///    3.3. Check the intrinsic validity (timestamp, scope)
 /// 4. Query the backend for a renewed (bearer) token
 pub fn refresh(handler: &mut dyn Endpoint, request: &dyn Request) -> Result<BearerToken> {
     enum Requested {

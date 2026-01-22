@@ -282,11 +282,11 @@ impl<'a, R: WebRequest> TokenRequest for WrappedRequest<'a, R> {
         self.error.is_none()
     }
 
-    fn code(&self) -> Option<Cow<str>> {
+    fn code(&self) -> Option<Cow<'_, str>> {
         self.body.unique_value("code")
     }
 
-    fn authorization(&self) -> TokenAuthorization {
+    fn authorization(&self) -> TokenAuthorization<'_> {
         match &self.authorization {
             None => TokenAuthorization::None,
             Some(Authorization(username, None)) => TokenAuthorization::Username(username.into()),
@@ -296,19 +296,19 @@ impl<'a, R: WebRequest> TokenRequest for WrappedRequest<'a, R> {
         }
     }
 
-    fn client_id(&self) -> Option<Cow<str>> {
+    fn client_id(&self) -> Option<Cow<'_, str>> {
         self.body.unique_value("client_id")
     }
 
-    fn redirect_uri(&self) -> Option<Cow<str>> {
+    fn redirect_uri(&self) -> Option<Cow<'_, str>> {
         self.body.unique_value("redirect_uri")
     }
 
-    fn grant_type(&self) -> Option<Cow<str>> {
+    fn grant_type(&self) -> Option<Cow<'_, str>> {
         self.body.unique_value("grant_type")
     }
 
-    fn extension(&self, key: &str) -> Option<Cow<str>> {
+    fn extension(&self, key: &str) -> Option<Cow<'_, str>> {
         self.body.unique_value(key)
     }
 

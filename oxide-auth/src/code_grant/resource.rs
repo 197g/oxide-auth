@@ -88,7 +88,7 @@ pub trait Request {
     /// Expects the complete `Authorization` HTTP-header, including the qualification as `Bearer`.
     /// In case the client included multiple forms of authorization, this method MUST return None
     /// and the request SHOULD be marked as invalid.
-    fn token(&self) -> Option<Cow<str>>;
+    fn token(&self) -> Option<Cow<'_, str>>;
 }
 
 /// Required functionality to respond to resource requests.
@@ -212,6 +212,12 @@ impl Resource {
 
     fn take(&mut self) -> ResourceState {
         mem::replace(&mut self.state, ResourceState::Err(Error::PrimitiveError))
+    }
+}
+
+impl Default for Resource {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

@@ -51,7 +51,7 @@ impl<I: TagGrant> AuthMap<I> {
     }
 }
 
-impl<'a, A: Authorizer + ?Sized> Authorizer for &'a mut A {
+impl<A: Authorizer + ?Sized> Authorizer for &mut A {
     fn authorize(&mut self, grant: Grant) -> Result<String, ()> {
         (**self).authorize(grant)
     }
@@ -104,7 +104,7 @@ impl<I: TagGrant> Authorizer for AuthMap<I> {
         Ok(token)
     }
 
-    fn extract<'a>(&mut self, grant: &'a str) -> Result<Option<Grant>, ()> {
+    fn extract(&mut self, grant: &str) -> Result<Option<Grant>, ()> {
         Ok(self.tokens.remove(grant))
     }
 }

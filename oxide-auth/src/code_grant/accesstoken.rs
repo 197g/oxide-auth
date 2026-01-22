@@ -62,22 +62,22 @@ pub trait Request {
     fn valid(&self) -> bool;
 
     /// The authorization code grant for which an access token is wanted.
-    fn code(&self) -> Option<Cow<str>>;
+    fn code(&self) -> Option<Cow<'_, str>>;
 
     /// User:password of a basic authorization header.
-    fn authorization(&self) -> Authorization;
+    fn authorization(&self) -> Authorization<'_>;
 
     /// The client_id, optional parameter for public clients.
-    fn client_id(&self) -> Option<Cow<str>>;
+    fn client_id(&self) -> Option<Cow<'_, str>>;
 
     /// Valid request have the redirect url used to request the authorization code grant.
-    fn redirect_uri(&self) -> Option<Cow<str>>;
+    fn redirect_uri(&self) -> Option<Cow<'_, str>>;
 
     /// Valid requests have this set to "authorization_code"
-    fn grant_type(&self) -> Option<Cow<str>>;
+    fn grant_type(&self) -> Option<Cow<'_, str>>;
 
     /// Retrieve an additional parameter used in an extension
-    fn extension(&self, key: &str) -> Option<Cow<str>>;
+    fn extension(&self, key: &str) -> Option<Cow<'_, str>>;
 
     /// Credentials in body should only be enabled if use of HTTP Basic is not possible.
     ///
@@ -171,10 +171,10 @@ enum Credentials<'a> {
 ///
 /// 1. Ensure the request is valid based on the basic requirements (includes required parameters)
 /// 2. Try to produce a new token
-///     2.1. Authenticate the client
-///     2.2. If there was no authentication, assert token does not require authentication
-///     2.3. Recover the current grant corresponding to the `code`
-///     2.4. Check the intrinsic validity (scope)
+///    2.1. Authenticate the client
+///    2.2. If there was no authentication, assert token does not require authentication
+///    2.3. Recover the current grant corresponding to the `code`
+///    2.4. Check the intrinsic validity (scope)
 /// 3. Query the backend for a new (bearer) token
 pub struct AccessToken {
     state: AccessTokenState,
@@ -345,9 +345,9 @@ impl AccessToken {
 
         match &authorization {
             Authorization::None => {}
-            Authorization::Username(username) => credentials.unauthenticated(&username),
+            Authorization::Username(username) => credentials.unauthenticated(username),
             Authorization::UsernamePassword(username, password) => {
-                credentials.authenticate(&username, &password)
+                credentials.authenticate(username, password)
             }
         }
 

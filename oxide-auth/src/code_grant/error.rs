@@ -281,10 +281,10 @@ impl IntoIterator for &'_ AuthorizationError {
     fn into_iter(self) -> Self::IntoIter {
         let mut vec = vec![("error", Cow::Borrowed(self.error.description()))];
         if let Some(description) = &self.description {
-            vec.push(("description", description.clone().to_owned()));
+            vec.push(("description", description.clone()));
         }
         if let Some(uri) = &self.uri {
-            vec.push(("uri", uri.clone().to_owned()));
+            vec.push(("uri", uri.clone()));
         }
         vec.into_iter()
     }
@@ -314,10 +314,10 @@ impl IntoIterator for &'_ AccessTokenError {
     fn into_iter(self) -> Self::IntoIter {
         let mut vec = vec![("error", Cow::Borrowed(self.error.description()))];
         if let Some(description) = &self.description {
-            vec.push(("description", description.clone().to_owned()));
+            vec.push(("description", description.clone()));
         }
         if let Some(uri) = &self.uri {
-            vec.push(("uri", uri.clone().to_owned()));
+            vec.push(("uri", uri.clone()));
         }
         vec.into_iter()
     }

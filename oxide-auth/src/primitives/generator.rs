@@ -163,7 +163,7 @@ impl Assertion {
         TaggedAssertion(self, tag)
     }
 
-    fn extract<'a>(&self, token: &'a str) -> Result<(Grant, String), ()> {
+    fn extract(&self, token: &str) -> Result<(Grant, String), ()> {
         let decoded = STANDARD.decode(token).map_err(|_| ())?;
         let assertion: AssertGrant = rmp_serde::from_slice(&decoded).map_err(|_| ())?;
 
@@ -216,22 +216,22 @@ impl<'a> TaggedAssertion<'a> {
     ///
     /// Result in an Err if either the signature is invalid or if the tag does not match the
     /// expected usage tag given to this assertion.
-    pub fn extract<'b>(&self, token: &'b str) -> Result<Grant, ()> {
+    pub fn extract(&self, token: &str) -> Result<Grant, ()> {
         self.0
             .extract(token)
             .and_then(|(token, tag)| if tag == self.1 { Ok(token) } else { Err(()) })
     }
 }
 
-impl<'a, T: TagGrant + ?Sized + 'a> TagGrant for Box<T> {
+impl<T: TagGrant + ?Sized> TagGrant for Box<T> {
     fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, ()> {
-        (&mut **self).tag(counter, grant)
+        (**self).tag(counter, grant)
     }
 }
 
 impl<'a, T: TagGrant + ?Sized + 'a> TagGrant for &'a mut T {
     fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, ()> {
-        (&mut **self).tag(counter, grant)
+        (**self).tag(counter, grant)
     }
 }
 
@@ -241,7 +241,7 @@ impl TagGrant for RandomGenerator {
     }
 }
 
-impl<'a> TagGrant for &'a RandomGenerator {
+impl TagGrant for &RandomGenerator {
     fn tag(&mut self, _: u64, _: &Grant) -> Result<String, ()> {
         Ok(self.generate())
     }
@@ -265,7 +265,7 @@ impl TagGrant for Assertion {
     }
 }
 
-impl<'a> TagGrant for &'a Assertion {
+impl TagGrant for &Assertion {
     fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, ()> {
         self.counted_signature(counter, grant)
     }
@@ -306,7 +306,7 @@ mod url_serde {
     use serde::de::{Deserialize, Deserializer, Error};
 
     pub fn serialize<S: Serializer>(url: &Url, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&url.to_string())
+        serializer.serialize_str(url.as_ref())
     }
 
     pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Url, D::Error> {
