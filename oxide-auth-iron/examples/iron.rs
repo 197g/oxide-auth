@@ -6,7 +6,7 @@ extern crate router;
 use std::sync::{Arc, Mutex};
 use std::thread::spawn;
 
-use iron::{Iron, Request, Response};
+use iron::{Iron, IronError, Request, Response};
 use iron::headers::ContentType;
 use iron::status::Status;
 use iron::middleware::Handler;
@@ -44,7 +44,7 @@ fn main_router() -> impl Handler + 'static {
                 .execute(request.into())
                 .map_err(|e| {
                     let e: OAuthError = e.into();
-                    e.into()
+                    IronError::from(e)
                 })?;
             Ok(response.into())
         },
@@ -61,7 +61,7 @@ fn main_router() -> impl Handler + 'static {
                 .execute(request.into())
                 .map_err(|e| {
                     let e: OAuthError = e.into();
-                    e.into()
+                    IronError::from(e)
                 })?;
             Ok(response.into())
         },
@@ -77,7 +77,7 @@ fn main_router() -> impl Handler + 'static {
                 .execute(request.into())
                 .map_err(|e| {
                     let e: OAuthError = e.into();
-                    e.into()
+                    IronError::from(e)
                 })?;
             Ok(response.into())
         },
