@@ -75,9 +75,8 @@ impl ResourceSetup {
     }
 
     fn test_access_error(&mut self, request: CraftedRequest) {
-        match resource_flow(&mut self.issuer, &self.resource_scope).execute(request) {
-            Ok(resp) => panic!("Expected an error instead of {:?}", resp),
-            Err(_) => (),
+        if let Ok(resp) = resource_flow(&mut self.issuer, &self.resource_scope).execute(request) {
+            panic!("Expected an error instead of {:?}", resp)
         }
     }
 }

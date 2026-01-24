@@ -36,7 +36,7 @@ impl AuthorizationSetup {
 
     fn test_success(&mut self, request: CraftedRequest) {
         let response = authorization_flow(
-            &mut self.registrar,
+            &self.registrar,
             &mut self.authorizer,
             &mut Allow(EXAMPLE_OWNER_ID.to_string()),
         )
@@ -46,14 +46,14 @@ impl AuthorizationSetup {
         assert_eq!(response.status, Status::Redirect);
 
         match response.location {
-            Some(ref url) if url.as_str().find("error").is_none() => (),
+            Some(ref url) if !url.as_str().contains("error") => (),
             other => panic!("Expected successful redirect: {:?}", other),
         }
     }
 
     fn test_silent_error(&mut self, request: CraftedRequest) {
         match authorization_flow(
-            &mut self.registrar,
+            &self.registrar,
             &mut self.authorizer,
             &mut Allow(EXAMPLE_OWNER_ID.to_string()),
         )
@@ -69,8 +69,8 @@ impl AuthorizationSetup {
     where
         P: OwnerSolicitor<CraftedRequest>,
     {
-        let response = authorization_flow(&mut self.registrar, &mut self.authorizer, &mut pagehandler)
-            .execute(request);
+        let response =
+            authorization_flow(&self.registrar, &mut self.authorizer, &mut pagehandler).execute(request);
 
         let response = match response {
             Err(resp) => panic!("Expected redirect with error set: {:?}", resp),
@@ -78,15 +78,7 @@ impl AuthorizationSetup {
         };
 
         match response.location {
-            Some(ref url)
-                if url
-                    .query_pairs()
-                    .collect::<HashMap<_, _>>()
-                    .get("error")
-                    .is_some() =>
-            {
-                ()
-            }
+            Some(ref url) if url.query_pairs().collect::<HashMap<_, _>>().contains_key("error") => {}
             other => panic!("Expected location with error set description: {:?}", other),
         }
     }
@@ -96,7 +88,7 @@ impl AuthorizationSetup {
 fn auth_success() {
     let success = CraftedRequest {
         query: Some(
-            vec![
+            [
                 ("response_type", "code"),
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("redirect_uri", EXAMPLE_REDIRECT_URI),
@@ -114,7 +106,7 @@ fn auth_success() {
 #[test]
 fn auth_request_silent_missing_client() {
     let missing_client = CraftedRequest {
-        query: Some(vec![("response_type", "code")].iter().to_single_value_query()),
+        query: Some([("response_type", "code")].iter().to_single_value_query()),
         urlbody: None,
         auth: None,
     };
@@ -127,7 +119,7 @@ fn auth_request_silent_unknown_client() {
     // The client_id is not registered
     let unknown_client = CraftedRequest {
         query: Some(
-            vec![
+            [
                 ("response_type", "code"),
                 ("client_id", "SomeOtherClient"),
                 ("redirect_uri", "https://wrong.client.example/endpoint"),
@@ -147,7 +139,7 @@ fn auth_request_silent_mismatching_redirect() {
     // The redirect_uri does not match
     let mismatching_redirect = CraftedRequest {
         query: Some(
-            vec![
+            [
                 ("response_type", "code"),
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("redirect_uri", "https://wrong.client.example/endpoint"),
@@ -166,9 +158,9 @@ fn auth_request_silent_mismatching_redirect() {
 fn auth_request_silent_mismatching_literal_redirect() {
     // The redirect_uri does not match if stringly matched.
     let mut setup = AuthorizationSetup::new();
-    const UNIQUE_CLIENT: &'static str = "client_auth_request_silent_mismatching_literal_redirect";
-    const REGISTERED_URL: &'static str = "https://right.client.example/endpoint";
-    const TRIED_URL: &'static str = "https://right.client.example/endpoint/";
+    const UNIQUE_CLIENT: &str = "client_auth_request_silent_mismatching_literal_redirect";
+    const REGISTERED_URL: &str = "https://right.client.example/endpoint";
+    const TRIED_URL: &str = "https://right.client.example/endpoint/";
 
     let client = Client::confidential(
         UNIQUE_CLIENT,
@@ -180,7 +172,7 @@ fn auth_request_silent_mismatching_literal_redirect() {
 
     let mismatching_redirect = CraftedRequest {
         query: Some(
-            vec![
+            [
                 ("response_type", "code"),
                 ("client_id", UNIQUE_CLIENT),
                 ("redirect_uri", TRIED_URL),
@@ -196,7 +188,7 @@ fn auth_request_silent_mismatching_literal_redirect() {
 
     let valid_redirect = CraftedRequest {
         query: Some(
-            vec![
+            [
                 ("response_type", "code"),
                 ("client_id", UNIQUE_CLIENT),
                 ("redirect_uri", REGISTERED_URL),
@@ -216,7 +208,7 @@ fn auth_request_silent_invalid_redirect() {
     // The redirect_uri is not an uri ('\' is not allowed to appear in the scheme)
     let invalid_redirect = CraftedRequest {
         query: Some(
-            vec![
+            [
                 ("response_type", "code"),
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("redirect_uri", "\\://"),
@@ -236,7 +228,7 @@ fn auth_request_error_denied() {
     // Used in conjunction with a denying authorization handler below
     let denied_request = CraftedRequest {
         query: Some(
-            vec![
+            [
                 ("response_type", "code"),
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("redirect_uri", EXAMPLE_REDIRECT_URI),
@@ -256,7 +248,7 @@ fn auth_request_error_unsupported_method() {
     // Requesting an authorization token for a method other than code
     let unsupported_method = CraftedRequest {
         query: Some(
-            vec![
+            [
                 ("response_type", "other_method"),
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("redirect_uri", EXAMPLE_REDIRECT_URI),
@@ -277,7 +269,7 @@ fn auth_request_error_malformed_scope() {
     // A scope with malformed formatting
     let malformed_scope = CraftedRequest {
         query: Some(
-            vec![
+            [
                 ("response_type", "code"),
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("redirect_uri", EXAMPLE_REDIRECT_URI),

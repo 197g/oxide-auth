@@ -38,9 +38,9 @@ impl PkceSetup {
         let issuer = TokenMap::new(RandomGenerator::new(16));
 
         PkceSetup {
-            registrar: registrar,
-            authorizer: authorizer,
-            issuer: issuer,
+            registrar,
+            authorizer,
+            issuer,
             auth_token: token,
             // The following are from https://tools.ietf.org/html/rfc7636#page-18
             sha256_challenge: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM".to_string(),
@@ -125,7 +125,7 @@ impl PkceSetup {
 
     fn assert_nonerror_redirect(response: CraftedResponse) {
         assert_eq!(response.status, Status::Redirect, "Expected redirect to client");
-        assert!(response.location.unwrap().as_str().find("error").is_none());
+        assert!(!response.location.unwrap().as_str().contains("error"));
     }
 
     fn json_response(body: Option<Body>) -> TokenResponse {
@@ -144,7 +144,7 @@ fn pkce_correct_verifier() {
 
     let correct_authorization = CraftedRequest {
         query: Some(
-            vec![
+            [
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("redirect_uri", EXAMPLE_REDIRECT_URI),
                 ("response_type", "code"),
@@ -161,7 +161,7 @@ fn pkce_correct_verifier() {
     let correct_access = CraftedRequest {
         query: None,
         urlbody: Some(
-            vec![
+            [
                 ("grant_type", "authorization_code"),
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("code", &setup.auth_token),
@@ -183,7 +183,7 @@ fn pkce_failed_verifier() {
 
     let correct_authorization = CraftedRequest {
         query: Some(
-            vec![
+            [
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("redirect_uri", EXAMPLE_REDIRECT_URI),
                 ("response_type", "code"),
@@ -200,7 +200,7 @@ fn pkce_failed_verifier() {
     let correct_access = CraftedRequest {
         query: None,
         urlbody: Some(
-            vec![
+            [
                 ("grant_type", "authorization_code"),
                 ("client_id", EXAMPLE_CLIENT_ID),
                 ("code", &setup.auth_token),

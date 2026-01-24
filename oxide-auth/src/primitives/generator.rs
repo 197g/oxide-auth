@@ -378,8 +378,8 @@ mod tests {
     #[allow(dead_code, unused)]
     fn assert_send_sync_static() {
         fn uses<T: Send + Sync + 'static>(arg: T) {}
-        let _ = uses(RandomGenerator::new(16));
+        uses(RandomGenerator::new(16));
         let fake_key = [0u8; 16];
-        let _ = uses(Assertion::new(AssertionKind::HmacSha256, &fake_key));
+        uses(Assertion::new(AssertionKind::HmacSha256, &fake_key));
     }
 }

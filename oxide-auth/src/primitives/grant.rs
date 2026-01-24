@@ -266,7 +266,7 @@ mod tests {
         assert_eq!(
             extensions
                 .public()
-                .filter(|&(name, value)| name == "pub_none" && value == None)
+                .filter(|&(name, value)| name == "pub_none" && value.is_none())
                 .count(),
             1
         );
@@ -282,7 +282,7 @@ mod tests {
         assert_eq!(
             extensions
                 .private()
-                .filter(|&(name, value)| name == "priv_none" && value == None)
+                .filter(|&(name, value)| name == "priv_none" && value.is_none())
                 .count(),
             1
         );
