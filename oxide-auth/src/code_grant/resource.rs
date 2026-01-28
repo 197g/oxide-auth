@@ -124,7 +124,7 @@ enum ResourceState {
 #[derive(Clone)]
 pub enum Input<'req> {
     /// Provide the queried (bearer) token.
-    Recovered(Option<Grant>),
+    Recovered(Option<Box<Grant>>),
     /// Determine the scopes of requested resource.
     Scopes(&'req [Scope]),
     /// Provides simply the original request.
@@ -190,6 +190,7 @@ impl Resource {
             }
             (ResourceState::Internalized { token }, Input::Scopes(scopes)) => get_scopes(token, scopes),
             (ResourceState::Recovering { token: _, scopes }, Input::Recovered(grant)) => {
+                let grant = grant.map(|grant| *grant);
                 match recovered(grant, scopes) {
                     Ok(grant) => return Output::Ok(Box::new(grant)),
                     Err(err) => ResourceState::Err(err),
@@ -241,6 +242,7 @@ pub fn protect(handler: &mut dyn Endpoint, req: &dyn Request) -> Result<Grant> {
                 let grant = handler
                     .issuer()
                     .recover_token(&token)
+                    .map(|grant| grant.map(Box::new))
                     .map_err(|_| Error::PrimitiveError)?;
                 Input::Recovered(grant)
             }

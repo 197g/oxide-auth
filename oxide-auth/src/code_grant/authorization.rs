@@ -511,7 +511,7 @@ pub enum Error {
 /// of this should be enforced by the frontend instead.
 #[derive(Clone)]
 pub struct ErrorUrl {
-    base_uri: Url,
+    base_uri: Box<Url>,
     error: AuthorizationError,
 }
 
@@ -525,7 +525,10 @@ impl ErrorUrl {
     {
         url.query_pairs_mut()
             .extend_pairs(state.as_ref().map(|st| ("state", st.as_ref())));
-        ErrorUrl { base_uri: url, error }
+        ErrorUrl {
+            base_uri: Box::new(url),
+            error,
+        }
     }
 
     /// Construct a new error, already fixing the state parameter if it exists.
@@ -571,6 +574,6 @@ impl From<ErrorUrl> for Url {
     fn from(val: ErrorUrl) -> Self {
         let mut url = val.base_uri;
         url.query_pairs_mut().extend_pairs(val.error);
-        url
+        *url
     }
 }

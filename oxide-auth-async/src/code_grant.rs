@@ -113,6 +113,7 @@ pub mod resource {
                         .issuer()
                         .recover_token(&token)
                         .await
+                        .map(|grant| grant.map(Box::new))
                         .map_err(|_| Error::PrimitiveError)?;
                     Input::Recovered(grant)
                 }
