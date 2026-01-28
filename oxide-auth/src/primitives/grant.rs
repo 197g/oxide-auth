@@ -1,4 +1,6 @@
 //! Encapsulates various shared mechanisms for handlings different grants.
+use crate::OAuthOpaqueError;
+
 use super::{Url, Time};
 use super::scope::Scope;
 
@@ -91,11 +93,11 @@ impl Value {
     ///
     /// Returns an `Err` if this is not a public extension, `None` if the extension has no value
     /// but consists only of the key, and `Some(_)` otherwise.
-    pub fn public_value(&self) -> Result<Option<&str>, ()> {
+    pub fn public_value(&self) -> Result<Option<&str>, OAuthOpaqueError> {
         match self {
             Value::Public(Some(content)) => Ok(Some(content)),
             Value::Public(None) => Ok(None),
-            _ => Err(()),
+            _ => Err(OAuthOpaqueError),
         }
     }
 
@@ -103,10 +105,10 @@ impl Value {
     ///
     /// Returns an `Err` if this is not a public extension, `None` if the extension has no value
     /// but consists only of the key, and `Some(_)` otherwise.
-    pub fn into_public_value(self) -> Result<Option<String>, ()> {
+    pub fn into_public_value(self) -> Result<Option<String>, OAuthOpaqueError> {
         match self {
             Value::Public(content) => Ok(content),
-            _ => Err(()),
+            _ => Err(OAuthOpaqueError),
         }
     }
 
@@ -114,11 +116,11 @@ impl Value {
     ///
     /// Returns an `Err` if this is not a private extension, `None` if the extension has no value
     /// but consists only of the key, and `Some(_)` otherwise.
-    pub fn private_value(&self) -> Result<Option<&str>, ()> {
+    pub fn private_value(&self) -> Result<Option<&str>, OAuthOpaqueError> {
         match self {
             Value::Private(Some(content)) => Ok(Some(content)),
             Value::Private(None) => Ok(None),
-            _ => Err(()),
+            _ => Err(OAuthOpaqueError),
         }
     }
 
@@ -126,10 +128,10 @@ impl Value {
     ///
     /// Returns an `Err` if this is not a private extension, `None` if the extension has no value
     /// but consists only of the key, and `Some(_)` otherwise.
-    pub fn into_private_value(self) -> Result<Option<String>, ()> {
+    pub fn into_private_value(self) -> Result<Option<String>, OAuthOpaqueError> {
         match self {
             Value::Private(content) => Ok(content),
-            _ => Err(()),
+            _ => Err(OAuthOpaqueError),
         }
     }
 }

@@ -1,4 +1,5 @@
 pub mod refresh {
+    use oxide_auth::OAuthOpaqueError;
     use oxide_auth::code_grant::refresh::{BearerToken, Error, Input, Output, Refresh, Request};
     use oxide_auth::primitives::{grant::Grant, registrar::RegistrarError};
 
@@ -29,7 +30,7 @@ pub mod refresh {
                         .issuer()
                         .refresh(&token, *grant)
                         .await
-                        .map_err(|()| Error::Primitive)?;
+                        .map_err(|OAuthOpaqueError| Error::Primitive)?;
                     Input::Refreshed(refreshed)
                 }
                 Requested::RecoverRefresh { token } => {
@@ -37,7 +38,7 @@ pub mod refresh {
                         .issuer()
                         .recover_refresh(&token)
                         .await
-                        .map_err(|()| Error::Primitive)?;
+                        .map_err(|OAuthOpaqueError| Error::Primitive)?;
                     Input::Recovered {
                         scope: request.scope(),
                         grant: recovered.map(Box::new),
@@ -134,8 +135,9 @@ pub mod client_credentials {
     use async_trait::async_trait;
     use chrono::{Utc, Duration};
     use oxide_auth::{
+        OAuthOpaqueError,
         code_grant::{
-            accesstoken::{PrimitiveError, BearerToken},
+            accesstoken::{BearerToken, PrimitiveError},
             client_credentials::{ClientCredentials, Error, Input, Output, Request as TokenRequest},
         },
         endpoint::{PreGrant, Scope, Solicitation},
@@ -221,7 +223,7 @@ pub mod client_credentials {
                     extensions: self.extensions,
                 })
                 .await
-                .map_err(|()| Error::Primitive(Box::new(PrimitiveError::empty())))?;
+                .map_err(|OAuthOpaqueError| Error::Primitive(Box::new(PrimitiveError::empty())))?;
 
             if !allow_refresh_token {
                 token.refresh = None;
@@ -480,6 +482,7 @@ pub mod authorization {
     use async_trait::async_trait;
     use chrono::{Duration, Utc};
     use oxide_auth::{
+        OAuthOpaqueError,
         code_grant::{
             authorization::{Authorization, Error, ErrorUrl, Input, Output, Request},
             error::{AuthorizationError, AuthorizationErrorType},
@@ -579,7 +582,7 @@ pub mod authorization {
                     extensions: self.extensions,
                 })
                 .await
-                .map_err(|()| Error::PrimitiveError)?;
+                .map_err(|OAuthOpaqueError| Error::PrimitiveError)?;
 
             url.query_pairs_mut()
                 .append_pair("code", grant.as_str())

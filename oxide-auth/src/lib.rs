@@ -69,3 +69,7 @@ pub mod code_grant;
 pub mod endpoint;
 pub mod frontends;
 pub mod primitives;
+
+/// An opaque error type used to avoid leaking sensitive information
+#[derive(Debug)]
+pub struct OAuthOpaqueError;

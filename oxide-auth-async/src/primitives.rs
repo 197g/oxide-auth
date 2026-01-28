@@ -1,5 +1,6 @@
 //! Async versions of all primitives traits.
 use async_trait::async_trait;
+use oxide_auth::OAuthOpaqueError;
 use oxide_auth::primitives::{grant::Grant, scope::Scope};
 use oxide_auth::primitives::issuer::{IssuedToken, RefreshedToken};
 use oxide_auth::primitives::{
@@ -9,9 +10,9 @@ use oxide_auth::primitives::{
 
 #[async_trait]
 pub trait Authorizer {
-    async fn authorize(&mut self, _: Grant) -> Result<String, ()>;
+    async fn authorize(&mut self, _: Grant) -> Result<String, OAuthOpaqueError>;
 
-    async fn extract(&mut self, _: &str) -> Result<Option<Grant>, ()>;
+    async fn extract(&mut self, _: &str) -> Result<Option<Grant>, OAuthOpaqueError>;
 }
 
 #[async_trait]
@@ -19,24 +20,24 @@ impl<T> Authorizer for T
 where
     T: authorizer::Authorizer + Send + ?Sized,
 {
-    async fn authorize(&mut self, grant: Grant) -> Result<String, ()> {
+    async fn authorize(&mut self, grant: Grant) -> Result<String, OAuthOpaqueError> {
         authorizer::Authorizer::authorize(self, grant)
     }
 
-    async fn extract(&mut self, token: &str) -> Result<Option<Grant>, ()> {
+    async fn extract(&mut self, token: &str) -> Result<Option<Grant>, OAuthOpaqueError> {
         authorizer::Authorizer::extract(self, token)
     }
 }
 
 #[async_trait]
 pub trait Issuer {
-    async fn issue(&mut self, _: Grant) -> Result<IssuedToken, ()>;
+    async fn issue(&mut self, _: Grant) -> Result<IssuedToken, OAuthOpaqueError>;
 
-    async fn refresh(&mut self, _: &str, _: Grant) -> Result<RefreshedToken, ()>;
+    async fn refresh(&mut self, _: &str, _: Grant) -> Result<RefreshedToken, OAuthOpaqueError>;
 
-    async fn recover_token(&mut self, _: &str) -> Result<Option<Grant>, ()>;
+    async fn recover_token(&mut self, _: &str) -> Result<Option<Grant>, OAuthOpaqueError>;
 
-    async fn recover_refresh(&mut self, _: &str) -> Result<Option<Grant>, ()>;
+    async fn recover_refresh(&mut self, _: &str) -> Result<Option<Grant>, OAuthOpaqueError>;
 }
 
 #[async_trait]
@@ -44,19 +45,19 @@ impl<T> Issuer for T
 where
     T: issuer::Issuer + Send + ?Sized,
 {
-    async fn issue(&mut self, grant: Grant) -> Result<IssuedToken, ()> {
+    async fn issue(&mut self, grant: Grant) -> Result<IssuedToken, OAuthOpaqueError> {
         issuer::Issuer::issue(self, grant)
     }
 
-    async fn refresh(&mut self, token: &str, grant: Grant) -> Result<RefreshedToken, ()> {
+    async fn refresh(&mut self, token: &str, grant: Grant) -> Result<RefreshedToken, OAuthOpaqueError> {
         issuer::Issuer::refresh(self, token, grant)
     }
 
-    async fn recover_token(&mut self, token: &str) -> Result<Option<Grant>, ()> {
+    async fn recover_token(&mut self, token: &str) -> Result<Option<Grant>, OAuthOpaqueError> {
         issuer::Issuer::recover_token(self, token)
     }
 
-    async fn recover_refresh(&mut self, token: &str) -> Result<Option<Grant>, ()> {
+    async fn recover_refresh(&mut self, token: &str) -> Result<Option<Grant>, OAuthOpaqueError> {
         issuer::Issuer::recover_refresh(self, token)
     }
 }

@@ -1,4 +1,4 @@
-use crate::endpoint::*;
+use crate::{OAuthOpaqueError, endpoint::*};
 use crate::primitives::generator::TagGrant;
 use crate::primitives::grant::Grant;
 
@@ -147,7 +147,7 @@ impl WebResponse for CraftedResponse {
 struct TestGenerator(String);
 
 impl TagGrant for TestGenerator {
-    fn tag(&mut self, _: u64, _grant: &Grant) -> Result<String, ()> {
+    fn tag(&mut self, _: u64, _grant: &Grant) -> Result<String, OAuthOpaqueError> {
         Ok(self.0.clone())
     }
 }

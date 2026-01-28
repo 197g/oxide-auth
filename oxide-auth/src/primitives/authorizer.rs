@@ -8,6 +8,8 @@
 use std::collections::HashMap;
 use std::sync::{MutexGuard, RwLockWriteGuard};
 
+use crate::OAuthOpaqueError;
+
 use super::grant::Grant;
 use super::generator::TagGrant;
 
@@ -16,12 +18,12 @@ use super::generator::TagGrant;
 /// The authorization code can be traded for a bearer token at the token endpoint.
 pub trait Authorizer {
     /// Create a code which allows retrieval of a bearer token at a later time.
-    fn authorize(&mut self, _: Grant) -> Result<String, ()>;
+    fn authorize(&mut self, _: Grant) -> Result<String, OAuthOpaqueError>;
 
     /// Retrieve the parameters associated with a token, invalidating the code in the process. In
     /// particular, a code should not be usable twice (there is no stateless implementation of an
     /// authorizer for this reason).
-    fn extract(&mut self, token: &str) -> Result<Option<Grant>, ()>;
+    fn extract(&mut self, token: &str) -> Result<Option<Grant>, OAuthOpaqueError>;
 }
 
 /// An in-memory hash map.
@@ -52,47 +54,47 @@ impl<I: TagGrant> AuthMap<I> {
 }
 
 impl<A: Authorizer + ?Sized> Authorizer for &mut A {
-    fn authorize(&mut self, grant: Grant) -> Result<String, ()> {
+    fn authorize(&mut self, grant: Grant) -> Result<String, OAuthOpaqueError> {
         (**self).authorize(grant)
     }
 
-    fn extract(&mut self, code: &str) -> Result<Option<Grant>, ()> {
+    fn extract(&mut self, code: &str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (**self).extract(code)
     }
 }
 
 impl<A: Authorizer + ?Sized> Authorizer for Box<A> {
-    fn authorize(&mut self, grant: Grant) -> Result<String, ()> {
+    fn authorize(&mut self, grant: Grant) -> Result<String, OAuthOpaqueError> {
         (**self).authorize(grant)
     }
 
-    fn extract(&mut self, code: &str) -> Result<Option<Grant>, ()> {
+    fn extract(&mut self, code: &str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (**self).extract(code)
     }
 }
 
 impl<'a, A: Authorizer + ?Sized> Authorizer for MutexGuard<'a, A> {
-    fn authorize(&mut self, grant: Grant) -> Result<String, ()> {
+    fn authorize(&mut self, grant: Grant) -> Result<String, OAuthOpaqueError> {
         (**self).authorize(grant)
     }
 
-    fn extract(&mut self, code: &str) -> Result<Option<Grant>, ()> {
+    fn extract(&mut self, code: &str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (**self).extract(code)
     }
 }
 
 impl<'a, A: Authorizer + ?Sized> Authorizer for RwLockWriteGuard<'a, A> {
-    fn authorize(&mut self, grant: Grant) -> Result<String, ()> {
+    fn authorize(&mut self, grant: Grant) -> Result<String, OAuthOpaqueError> {
         (**self).authorize(grant)
     }
 
-    fn extract(&mut self, code: &str) -> Result<Option<Grant>, ()> {
+    fn extract(&mut self, code: &str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (**self).extract(code)
     }
 }
 
 impl<I: TagGrant> Authorizer for AuthMap<I> {
-    fn authorize(&mut self, grant: Grant) -> Result<String, ()> {
+    fn authorize(&mut self, grant: Grant) -> Result<String, OAuthOpaqueError> {
         // The (usage, grant) tuple needs to be unique. Since this wraps after 2^64 operations, we
         // expect the validity time of the grant to have changed by then. This works when you don't
         // set your system time forward/backward ~20billion seconds, assuming ~10^9 operations per
@@ -104,7 +106,7 @@ impl<I: TagGrant> Authorizer for AuthMap<I> {
         Ok(token)
     }
 
-    fn extract(&mut self, grant: &str) -> Result<Option<Grant>, ()> {
+    fn extract(&mut self, grant: &str) -> Result<Option<Grant>, OAuthOpaqueError> {
         Ok(self.tokens.remove(grant))
     }
 }
@@ -175,7 +177,7 @@ pub mod tests {
     fn bad_generator() {
         struct BadGenerator;
         impl TagGrant for BadGenerator {
-            fn tag(&mut self, _: u64, _: &Grant) -> Result<String, ()> {
+            fn tag(&mut self, _: u64, _: &Grant) -> Result<String, OAuthOpaqueError> {
                 Ok("YOLO.HowBadCanItBeToRepeatTokens?".into())
             }
         }

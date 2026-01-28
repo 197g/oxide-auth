@@ -4,9 +4,12 @@ use std::collections::HashMap;
 
 use chrono::{Duration, Utc};
 
-use crate::code_grant::{
-    accesstoken::TokenResponse,
-    error::{AccessTokenError, AccessTokenErrorType},
+use crate::{
+    OAuthOpaqueError,
+    code_grant::{
+        accesstoken::TokenResponse,
+        error::{AccessTokenError, AccessTokenErrorType},
+    },
 };
 use crate::primitives::grant::Grant;
 use crate::primitives::issuer::{RefreshedToken, Issuer};
@@ -344,14 +347,14 @@ pub fn refresh(handler: &mut dyn Endpoint, request: &dyn Request) -> Result<Bear
                 let refreshed = handler
                     .issuer()
                     .refresh(&token, *grant)
-                    .map_err(|()| Error::Primitive)?;
+                    .map_err(|OAuthOpaqueError| Error::Primitive)?;
                 Input::Refreshed(refreshed)
             }
             Requested::RecoverRefresh { token } => {
                 let recovered = handler
                     .issuer()
                     .recover_refresh(&token)
-                    .map_err(|()| Error::Primitive)?;
+                    .map_err(|OAuthOpaqueError| Error::Primitive)?;
                 Input::Recovered {
                     scope: request.scope(),
                     grant: recovered.map(Box::new),

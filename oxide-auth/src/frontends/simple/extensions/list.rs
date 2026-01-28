@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use super::{AuthorizationAddon, AccessTokenAddon, AddonResult, ClientCredentialsAddon};
+use crate::OAuthOpaqueError;
 use crate::code_grant::accesstoken::{Extension as AccessTokenExtension, Request};
 use crate::code_grant::authorization::{Extension as AuthorizationExtension, Request as AuthRequest};
 use crate::code_grant::client_credentials::{
@@ -113,7 +114,7 @@ impl Extension for &mut AddonList {
 impl AccessTokenExtension for AddonList {
     fn extend(
         &mut self, request: &dyn Request, mut data: Extensions,
-    ) -> std::result::Result<Extensions, ()> {
+    ) -> std::result::Result<Extensions, OAuthOpaqueError> {
         let mut result_data = Extensions::new();
 
         for ext in self.access_token.iter() {
@@ -123,7 +124,7 @@ impl AccessTokenExtension for AddonList {
             match result {
                 AddonResult::Ok => (),
                 AddonResult::Data(data) => result_data.set(ext, data),
-                AddonResult::Err => return Err(()),
+                AddonResult::Err => return Err(OAuthOpaqueError),
             }
         }
 
@@ -132,13 +133,15 @@ impl AccessTokenExtension for AddonList {
 }
 
 impl AccessTokenExtension for &mut AddonList {
-    fn extend(&mut self, request: &dyn Request, data: Extensions) -> Result<Extensions, ()> {
+    fn extend(
+        &mut self, request: &dyn Request, data: Extensions,
+    ) -> Result<Extensions, OAuthOpaqueError> {
         AccessTokenExtension::extend(*self, request, data)
     }
 }
 
 impl AuthorizationExtension for AddonList {
-    fn extend(&mut self, request: &dyn AuthRequest) -> Result<Extensions, ()> {
+    fn extend(&mut self, request: &dyn AuthRequest) -> Result<Extensions, OAuthOpaqueError> {
         let mut result_data = Extensions::new();
 
         for ext in self.authorization.iter() {
@@ -147,7 +150,7 @@ impl AuthorizationExtension for AddonList {
             match result {
                 AddonResult::Ok => (),
                 AddonResult::Data(data) => result_data.set(ext, data),
-                AddonResult::Err => return Err(()),
+                AddonResult::Err => return Err(OAuthOpaqueError),
             }
         }
 
@@ -156,13 +159,15 @@ impl AuthorizationExtension for AddonList {
 }
 
 impl AuthorizationExtension for &mut AddonList {
-    fn extend(&mut self, request: &dyn AuthRequest) -> Result<Extensions, ()> {
+    fn extend(&mut self, request: &dyn AuthRequest) -> Result<Extensions, OAuthOpaqueError> {
         AuthorizationExtension::extend(*self, request)
     }
 }
 
 impl ClientCredentialsExtension for AddonList {
-    fn extend(&mut self, request: &dyn ClientCredentialsRequest) -> Result<Extensions, ()> {
+    fn extend(
+        &mut self, request: &dyn ClientCredentialsRequest,
+    ) -> Result<Extensions, OAuthOpaqueError> {
         let mut result_data = Extensions::new();
 
         for ext in self.client_credentials.iter() {
@@ -171,7 +176,7 @@ impl ClientCredentialsExtension for AddonList {
             match result {
                 AddonResult::Ok => (),
                 AddonResult::Data(data) => result_data.set(ext, data),
-                AddonResult::Err => return Err(()),
+                AddonResult::Err => return Err(OAuthOpaqueError),
             }
         }
 
@@ -180,7 +185,9 @@ impl ClientCredentialsExtension for AddonList {
 }
 
 impl ClientCredentialsExtension for &mut AddonList {
-    fn extend(&mut self, request: &dyn ClientCredentialsRequest) -> Result<Extensions, ()> {
+    fn extend(
+        &mut self, request: &dyn ClientCredentialsRequest,
+    ) -> Result<Extensions, OAuthOpaqueError> {
         ClientCredentialsExtension::extend(*self, request)
     }
 }
