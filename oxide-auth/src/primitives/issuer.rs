@@ -9,6 +9,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use chrono::{Duration, Utc};
 
+use crate::OAuthOpaqueError;
 use crate::{endpoint::PreGrant, code_grant::accesstoken::BearerToken};
 use super::Time;
 use super::grant::Grant;
@@ -22,16 +23,16 @@ use super::generator::{TagGrant, TaggedAssertion, Assertion};
 /// they do not intend to offer a statefull refresh api).
 pub trait Issuer {
     /// Create a token authorizing the request parameters
-    fn issue(&mut self, grant: Grant) -> Result<IssuedToken, ()>;
+    fn issue(&mut self, grant: Grant) -> Result<IssuedToken, OAuthOpaqueError>;
 
     /// Refresh a token.
-    fn refresh(&mut self, _refresh: &str, _grant: Grant) -> Result<RefreshedToken, ()>;
+    fn refresh(&mut self, _refresh: &str, _grant: Grant) -> Result<RefreshedToken, OAuthOpaqueError>;
 
     /// Get the values corresponding to a bearer token
-    fn recover_token<'a>(&'a self, _: &'a str) -> Result<Option<Grant>, ()>;
+    fn recover_token<'a>(&'a self, _: &'a str) -> Result<Option<Grant>, OAuthOpaqueError>;
 
     /// Get the values corresponding to a refresh token
-    fn recover_refresh<'a>(&'a self, _: &'a str) -> Result<Option<Grant>, ()>;
+    fn recover_refresh<'a>(&'a self, _: &'a str) -> Result<Option<Grant>, OAuthOpaqueError>;
 }
 
 /// Token parameters returned to a client.
@@ -242,7 +243,7 @@ impl IssuedToken {
 }
 
 impl<G: TagGrant> Issuer for TokenMap<G> {
-    fn issue(&mut self, mut grant: Grant) -> Result<IssuedToken, ()> {
+    fn issue(&mut self, mut grant: Grant) -> Result<IssuedToken, OAuthOpaqueError> {
         self.set_duration(&mut grant);
         // The (usage, grant) tuple needs to be unique. Since this wraps after 2^63 operations, we
         // expect the validity time of the grant to have changed by then. This works when you don't
@@ -281,13 +282,13 @@ impl<G: TagGrant> Issuer for TokenMap<G> {
         })
     }
 
-    fn refresh(&mut self, refresh: &str, mut grant: Grant) -> Result<RefreshedToken, ()> {
+    fn refresh(&mut self, refresh: &str, mut grant: Grant) -> Result<RefreshedToken, OAuthOpaqueError> {
         // Remove the old token.
         let (refresh_key, mut token) = self
             .refresh
             .remove_entry(refresh)
             // Should only be called on valid refresh tokens.
-            .ok_or(())?;
+            .ok_or(OAuthOpaqueError)?;
 
         assert!(Arc::ptr_eq(token.refresh.as_ref().unwrap(), &refresh_key));
         self.set_duration(&mut grant);
@@ -328,11 +329,11 @@ impl<G: TagGrant> Issuer for TokenMap<G> {
         })
     }
 
-    fn recover_token<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, ()> {
+    fn recover_token<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, OAuthOpaqueError> {
         Ok(self.access.get(token).map(|token| token.grant.clone()))
     }
 
-    fn recover_refresh<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, ()> {
+    fn recover_refresh<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, OAuthOpaqueError> {
         Ok(self.refresh.get(token).map(|token| token.grant.clone()))
     }
 }
@@ -409,7 +410,7 @@ impl TokenSigner {
         self.counter.fetch_add(1, Ordering::Relaxed)
     }
 
-    fn refreshable_token(&self, grant: &Grant) -> Result<IssuedToken, ()> {
+    fn refreshable_token(&self, grant: &Grant) -> Result<IssuedToken, OAuthOpaqueError> {
         let first_ctr = self.next_counter() as u64;
         let second_ctr = self.next_counter() as u64;
 
@@ -424,7 +425,7 @@ impl TokenSigner {
         })
     }
 
-    fn unrefreshable_token(&self, grant: &Grant) -> Result<IssuedToken, ()> {
+    fn unrefreshable_token(&self, grant: &Grant) -> Result<IssuedToken, OAuthOpaqueError> {
         let counter = self.next_counter() as u64;
 
         let token = self.as_token().sign(counter, grant)?;
@@ -442,97 +443,97 @@ impl TokenSigner {
 }
 
 impl<I: Issuer + ?Sized> Issuer for &mut I {
-    fn issue(&mut self, grant: Grant) -> Result<IssuedToken, ()> {
+    fn issue(&mut self, grant: Grant) -> Result<IssuedToken, OAuthOpaqueError> {
         (**self).issue(grant)
     }
 
-    fn refresh(&mut self, token: &str, grant: Grant) -> Result<RefreshedToken, ()> {
+    fn refresh(&mut self, token: &str, grant: Grant) -> Result<RefreshedToken, OAuthOpaqueError> {
         (**self).refresh(token, grant)
     }
 
-    fn recover_token<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, ()> {
+    fn recover_token<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (**self).recover_token(token)
     }
 
-    fn recover_refresh<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, ()> {
+    fn recover_refresh<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (**self).recover_refresh(token)
     }
 }
 
 impl<I: Issuer + ?Sized> Issuer for Box<I> {
-    fn issue(&mut self, grant: Grant) -> Result<IssuedToken, ()> {
+    fn issue(&mut self, grant: Grant) -> Result<IssuedToken, OAuthOpaqueError> {
         (**self).issue(grant)
     }
 
-    fn refresh(&mut self, token: &str, grant: Grant) -> Result<RefreshedToken, ()> {
+    fn refresh(&mut self, token: &str, grant: Grant) -> Result<RefreshedToken, OAuthOpaqueError> {
         (**self).refresh(token, grant)
     }
 
-    fn recover_token<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, ()> {
+    fn recover_token<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (**self).recover_token(token)
     }
 
-    fn recover_refresh<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, ()> {
+    fn recover_refresh<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (**self).recover_refresh(token)
     }
 }
 
 impl<'s, I: Issuer + ?Sized> Issuer for MutexGuard<'s, I> {
-    fn issue(&mut self, grant: Grant) -> Result<IssuedToken, ()> {
+    fn issue(&mut self, grant: Grant) -> Result<IssuedToken, OAuthOpaqueError> {
         (**self).issue(grant)
     }
 
-    fn refresh(&mut self, token: &str, grant: Grant) -> Result<RefreshedToken, ()> {
+    fn refresh(&mut self, token: &str, grant: Grant) -> Result<RefreshedToken, OAuthOpaqueError> {
         (**self).refresh(token, grant)
     }
 
-    fn recover_token<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, ()> {
+    fn recover_token<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (**self).recover_token(token)
     }
 
-    fn recover_refresh<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, ()> {
+    fn recover_refresh<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (**self).recover_refresh(token)
     }
 }
 
 impl<'s, I: Issuer + ?Sized> Issuer for RwLockWriteGuard<'s, I> {
-    fn issue(&mut self, grant: Grant) -> Result<IssuedToken, ()> {
+    fn issue(&mut self, grant: Grant) -> Result<IssuedToken, OAuthOpaqueError> {
         (**self).issue(grant)
     }
 
-    fn refresh(&mut self, token: &str, grant: Grant) -> Result<RefreshedToken, ()> {
+    fn refresh(&mut self, token: &str, grant: Grant) -> Result<RefreshedToken, OAuthOpaqueError> {
         (**self).refresh(token, grant)
     }
 
-    fn recover_token<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, ()> {
+    fn recover_token<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (**self).recover_token(token)
     }
 
-    fn recover_refresh<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, ()> {
+    fn recover_refresh<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (**self).recover_refresh(token)
     }
 }
 
 impl Issuer for TokenSigner {
-    fn issue(&mut self, grant: Grant) -> Result<IssuedToken, ()> {
+    fn issue(&mut self, grant: Grant) -> Result<IssuedToken, OAuthOpaqueError> {
         (&mut &*self).issue(grant)
     }
 
-    fn refresh(&mut self, _refresh: &str, _grant: Grant) -> Result<RefreshedToken, ()> {
-        Err(())
+    fn refresh(&mut self, _refresh: &str, _grant: Grant) -> Result<RefreshedToken, OAuthOpaqueError> {
+        Err(OAuthOpaqueError)
     }
 
-    fn recover_token<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, ()> {
+    fn recover_token<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (&self).recover_token(token)
     }
 
-    fn recover_refresh<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, ()> {
+    fn recover_refresh<'a>(&'a self, token: &'a str) -> Result<Option<Grant>, OAuthOpaqueError> {
         (&self).recover_refresh(token)
     }
 }
 
 impl Issuer for &TokenSigner {
-    fn issue(&mut self, mut grant: Grant) -> Result<IssuedToken, ()> {
+    fn issue(&mut self, mut grant: Grant) -> Result<IssuedToken, OAuthOpaqueError> {
         if let Some(duration) = &self.duration {
             grant.until = Utc::now() + *duration;
         }
@@ -544,15 +545,15 @@ impl Issuer for &TokenSigner {
         }
     }
 
-    fn refresh(&mut self, _refresh: &str, _grant: Grant) -> Result<RefreshedToken, ()> {
-        Err(())
+    fn refresh(&mut self, _refresh: &str, _grant: Grant) -> Result<RefreshedToken, OAuthOpaqueError> {
+        Err(OAuthOpaqueError)
     }
 
-    fn recover_token<'t>(&'t self, token: &'t str) -> Result<Option<Grant>, ()> {
+    fn recover_token<'t>(&'t self, token: &'t str) -> Result<Option<Grant>, OAuthOpaqueError> {
         Ok(self.as_token().extract(token).ok())
     }
 
-    fn recover_refresh<'t>(&'t self, token: &'t str) -> Result<Option<Grant>, ()> {
+    fn recover_refresh<'t>(&'t self, token: &'t str) -> Result<Option<Grant>, OAuthOpaqueError> {
         if !self.have_refresh {
             return Ok(None);
         }
@@ -663,7 +664,7 @@ pub mod tests {
     fn bad_generator() {
         struct BadGenerator;
         impl TagGrant for BadGenerator {
-            fn tag(&mut self, _: u64, _: &Grant) -> Result<String, ()> {
+            fn tag(&mut self, _: u64, _: &Grant) -> Result<String, OAuthOpaqueError> {
                 Ok("YOLO.HowBadCanItBeToRepeatTokens?".into())
             }
         }

@@ -1,6 +1,7 @@
 use super::{AuthorizationAddon, AuthorizationRequest, AccessTokenAddon, AccessTokenRequest};
 use super::{AddonResult, Value};
 
+use crate::OAuthOpaqueError;
 pub use crate::code_grant::extensions::Pkce;
 
 impl AuthorizationAddon for Pkce {
@@ -9,7 +10,7 @@ impl AuthorizationAddon for Pkce {
         let challenge = request.extension("code_challenge");
 
         let encoded = match self.challenge(method, challenge) {
-            Err(()) => return AddonResult::Err,
+            Err(OAuthOpaqueError) => return AddonResult::Err,
             Ok(None) => return AddonResult::Ok,
             Ok(Some(encoded)) => encoded,
         };

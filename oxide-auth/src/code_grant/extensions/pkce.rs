@@ -1,6 +1,9 @@
 use std::borrow::Cow;
 
-use crate::primitives::grant::{GrantExtension, Value};
+use crate::{
+    OAuthOpaqueError,
+    primitives::grant::{GrantExtension, Value},
+};
 
 use base64::{self, engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use sha2::{Digest, Sha256};
@@ -73,11 +76,11 @@ impl Pkce {
     /// a SHA256 methods the results would not be quite as severe but still bad practice.
     pub fn challenge(
         &self, method: Option<Cow<str>>, challenge: Option<Cow<str>>,
-    ) -> Result<Option<Value>, ()> {
+    ) -> Result<Option<Value>, OAuthOpaqueError> {
         let method = method.unwrap_or(Cow::Borrowed("plain"));
 
         let challenge = match challenge {
-            None if self.required => return Err(()),
+            None if self.required => return Err(OAuthOpaqueError),
             None => return Ok(None),
             Some(challenge) => challenge,
         };
@@ -96,18 +99,20 @@ impl Pkce {
     ///
     /// When a challenge was agreed upon but no verifier is present, this method will return an
     /// error.
-    pub fn verify(&self, method: Option<Value>, verifier: Option<Cow<str>>) -> Result<(), ()> {
+    pub fn verify(
+        &self, method: Option<Value>, verifier: Option<Cow<str>>,
+    ) -> Result<(), OAuthOpaqueError> {
         let (method, verifier) = match (method, verifier) {
-            (None, _) if self.required => return Err(()),
+            (None, _) if self.required => return Err(OAuthOpaqueError),
             (None, _) => return Ok(()),
             // An internal saved method but no verifier
-            (Some(_), None) => return Err(()),
+            (Some(_), None) => return Err(OAuthOpaqueError),
             (Some(method), Some(verifier)) => (method, verifier),
         };
 
         let method = match method.into_private_value() {
             Ok(Some(method)) => method,
-            _ => return Err(()),
+            _ => return Err(OAuthOpaqueError),
         };
 
         let method = Method::from_encoded(Cow::Owned(method))?;
@@ -128,19 +133,19 @@ fn b64encode(data: &[u8]) -> String {
 }
 
 impl Method {
-    fn from_parameter(method: Cow<str>, challenge: Cow<str>) -> Result<Self, ()> {
+    fn from_parameter(method: Cow<str>, challenge: Cow<str>) -> Result<Self, OAuthOpaqueError> {
         match method.as_ref() {
             "plain" => Ok(Method::Plain(challenge.into_owned())),
             "S256" => Ok(Method::Sha256(challenge.into_owned())),
-            _ => Err(()),
+            _ => Err(OAuthOpaqueError),
         }
     }
 
-    fn assert_supported_method(self, allow_plain: bool) -> Result<Self, ()> {
+    fn assert_supported_method(self, allow_plain: bool) -> Result<Self, OAuthOpaqueError> {
         match (self, allow_plain) {
             (this, true) => Ok(this),
             (Method::Sha256(content), false) => Ok(Method::Sha256(content)),
-            (Method::Plain(_), false) => Err(()),
+            (Method::Plain(_), false) => Err(OAuthOpaqueError),
         }
     }
 
@@ -151,24 +156,24 @@ impl Method {
         }
     }
 
-    fn from_encoded(encoded: Cow<str>) -> Result<Method, ()> {
+    fn from_encoded(encoded: Cow<str>) -> Result<Method, OAuthOpaqueError> {
         // TODO: avoid allocation in case of borrow and invalid.
         let mut encoded = encoded.into_owned();
         match encoded.pop() {
-            None => Err(()),
+            None => Err(OAuthOpaqueError),
             Some('p') => Ok(Method::Plain(encoded)),
             Some('S') => Ok(Method::Sha256(encoded)),
-            _ => Err(()),
+            _ => Err(OAuthOpaqueError),
         }
     }
 
-    fn verify(&self, verifier: &str) -> Result<(), ()> {
+    fn verify(&self, verifier: &str) -> Result<(), OAuthOpaqueError> {
         match self {
             Method::Plain(encoded) => {
                 if encoded.as_bytes().ct_eq(verifier.as_bytes()).into() {
                     Ok(())
                 } else {
-                    Err(())
+                    Err(OAuthOpaqueError)
                 }
             }
             Method::Sha256(encoded) => {
@@ -178,7 +183,7 @@ impl Method {
                 if encoded.as_bytes().ct_eq(b64digest.as_bytes()).into() {
                     Ok(())
                 } else {
-                    Err(())
+                    Err(OAuthOpaqueError)
                 }
             }
         }

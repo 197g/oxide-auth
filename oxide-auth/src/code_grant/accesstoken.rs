@@ -7,6 +7,7 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use serde_json;
 
+use crate::OAuthOpaqueError;
 use crate::code_grant::error::{AccessTokenError, AccessTokenErrorType};
 use crate::primitives::authorizer::Authorizer;
 use crate::primitives::issuer::{IssuedToken, Issuer};
@@ -99,12 +100,15 @@ pub trait Extension {
     ///
     /// The input data comes from the extension data produced in the handling of the
     /// authorization code request.
-    fn extend(&mut self, request: &dyn Request, data: Extensions)
-        -> std::result::Result<Extensions, ()>;
+    fn extend(
+        &mut self, request: &dyn Request, data: Extensions,
+    ) -> std::result::Result<Extensions, OAuthOpaqueError>;
 }
 
 impl Extension for () {
-    fn extend(&mut self, _: &dyn Request, _: Extensions) -> std::result::Result<Extensions, ()> {
+    fn extend(
+        &mut self, _: &dyn Request, _: Extensions,
+    ) -> std::result::Result<Extensions, OAuthOpaqueError> {
         Ok(Extensions::new())
     }
 }

@@ -10,6 +10,8 @@
 //!     persistent storage for the loss of revocability. It is thus unfit for some backends, which
 //!     is not currently expressed in the type system or with traits.
 
+use crate::OAuthOpaqueError;
+
 use super::grant::{Value, Extensions, Grant};
 use super::{Url, Time};
 use super::scope::Scope;
@@ -43,7 +45,7 @@ use rmp_serde;
 /// between these.
 pub trait TagGrant {
     /// For example sign the input parameters or generate a random token.
-    fn tag(&mut self, usage: u64, grant: &Grant) -> Result<String, ()>;
+    fn tag(&mut self, usage: u64, grant: &Grant) -> Result<String, OAuthOpaqueError>;
 }
 
 /// Generates tokens from random bytes.
@@ -163,16 +165,18 @@ impl Assertion {
         TaggedAssertion(self, tag)
     }
 
-    fn extract(&self, token: &str) -> Result<(Grant, String), ()> {
-        let decoded = STANDARD.decode(token).map_err(|_| ())?;
-        let assertion: AssertGrant = rmp_serde::from_slice(&decoded).map_err(|_| ())?;
+    fn extract(&self, token: &str) -> Result<(Grant, String), OAuthOpaqueError> {
+        let decoded = STANDARD.decode(token).map_err(|_| OAuthOpaqueError)?;
+        let assertion: AssertGrant = rmp_serde::from_slice(&decoded).map_err(|_| OAuthOpaqueError)?;
 
         let mut hasher = self.hasher.clone();
         hasher.update(&assertion.0);
-        hasher.verify_slice(assertion.1.as_slice()).map_err(|_| ())?;
+        hasher
+            .verify_slice(assertion.1.as_slice())
+            .map_err(|_| OAuthOpaqueError)?;
 
         let (_, serde_grant, tag): (u64, SerdeAssertionGrant, String) =
-            rmp_serde::from_slice(&assertion.0).map_err(|_| ())?;
+            rmp_serde::from_slice(&assertion.0).map_err(|_| OAuthOpaqueError)?;
 
         Ok((serde_grant.grant(), tag))
     }
@@ -183,14 +187,16 @@ impl Assertion {
         hasher.finalize()
     }
 
-    fn counted_signature(&self, counter: u64, grant: &Grant) -> Result<String, ()> {
+    fn counted_signature(&self, counter: u64, grant: &Grant) -> Result<String, OAuthOpaqueError> {
         let serde_grant = SerdeAssertionGrant::try_from(grant)?;
         let tosign = rmp_serde::to_vec(&(serde_grant, counter)).unwrap();
         let signature = self.signature(&tosign);
         Ok(STANDARD.encode(signature.into_bytes()))
     }
 
-    fn generate_tagged(&self, counter: u64, grant: &Grant, tag: &str) -> Result<String, ()> {
+    fn generate_tagged(
+        &self, counter: u64, grant: &Grant, tag: &str,
+    ) -> Result<String, OAuthOpaqueError> {
         let serde_grant = SerdeAssertionGrant::try_from(grant)?;
         let tosign = rmp_serde::to_vec(&(counter, serde_grant, tag)).unwrap();
         let signature = self.signature(&tosign);
@@ -208,7 +214,7 @@ impl<'a> TaggedAssertion<'a> {
     /// function, similar to an IV to prevent accidentally producing the same token for the same
     /// grant (which may have multiple tokens). Note that the `tag` will be recovered and checked
     /// while the IV will not.
-    pub fn sign(&self, counter: u64, grant: &Grant) -> Result<String, ()> {
+    pub fn sign(&self, counter: u64, grant: &Grant) -> Result<String, OAuthOpaqueError> {
         self.0.generate_tagged(counter, grant, self.1)
     }
 
@@ -216,69 +222,73 @@ impl<'a> TaggedAssertion<'a> {
     ///
     /// Result in an Err if either the signature is invalid or if the tag does not match the
     /// expected usage tag given to this assertion.
-    pub fn extract(&self, token: &str) -> Result<Grant, ()> {
-        self.0
-            .extract(token)
-            .and_then(|(token, tag)| if tag == self.1 { Ok(token) } else { Err(()) })
+    pub fn extract(&self, token: &str) -> Result<Grant, OAuthOpaqueError> {
+        self.0.extract(token).and_then(|(token, tag)| {
+            if tag == self.1 {
+                Ok(token)
+            } else {
+                Err(OAuthOpaqueError)
+            }
+        })
     }
 }
 
 impl<T: TagGrant + ?Sized> TagGrant for Box<T> {
-    fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, ()> {
+    fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, OAuthOpaqueError> {
         (**self).tag(counter, grant)
     }
 }
 
 impl<'a, T: TagGrant + ?Sized + 'a> TagGrant for &'a mut T {
-    fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, ()> {
+    fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, OAuthOpaqueError> {
         (**self).tag(counter, grant)
     }
 }
 
 impl TagGrant for RandomGenerator {
-    fn tag(&mut self, _: u64, _: &Grant) -> Result<String, ()> {
+    fn tag(&mut self, _: u64, _: &Grant) -> Result<String, OAuthOpaqueError> {
         Ok(self.generate())
     }
 }
 
 impl TagGrant for &RandomGenerator {
-    fn tag(&mut self, _: u64, _: &Grant) -> Result<String, ()> {
+    fn tag(&mut self, _: u64, _: &Grant) -> Result<String, OAuthOpaqueError> {
         Ok(self.generate())
     }
 }
 
 impl TagGrant for Rc<RandomGenerator> {
-    fn tag(&mut self, _: u64, _: &Grant) -> Result<String, ()> {
+    fn tag(&mut self, _: u64, _: &Grant) -> Result<String, OAuthOpaqueError> {
         Ok(self.generate())
     }
 }
 
 impl TagGrant for Arc<RandomGenerator> {
-    fn tag(&mut self, _: u64, _: &Grant) -> Result<String, ()> {
+    fn tag(&mut self, _: u64, _: &Grant) -> Result<String, OAuthOpaqueError> {
         Ok(self.generate())
     }
 }
 
 impl TagGrant for Assertion {
-    fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, ()> {
+    fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, OAuthOpaqueError> {
         self.counted_signature(counter, grant)
     }
 }
 
 impl TagGrant for &Assertion {
-    fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, ()> {
+    fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, OAuthOpaqueError> {
         self.counted_signature(counter, grant)
     }
 }
 
 impl TagGrant for Rc<Assertion> {
-    fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, ()> {
+    fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, OAuthOpaqueError> {
         self.counted_signature(counter, grant)
     }
 }
 
 impl TagGrant for Arc<Assertion> {
-    fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, ()> {
+    fn tag(&mut self, counter: u64, grant: &Grant) -> Result<String, OAuthOpaqueError> {
         self.counted_signature(counter, grant)
     }
 }
@@ -333,11 +343,11 @@ mod time_serde {
 }
 
 impl SerdeAssertionGrant {
-    fn try_from(grant: &Grant) -> Result<Self, ()> {
+    fn try_from(grant: &Grant) -> Result<Self, OAuthOpaqueError> {
         let mut public_extensions: HashMap<String, Option<String>> = HashMap::new();
 
         if grant.extensions.private().any(|_| true) {
-            return Err(());
+            return Err(OAuthOpaqueError);
         }
 
         for (name, content) in grant.extensions.public() {

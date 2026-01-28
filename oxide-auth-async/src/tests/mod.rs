@@ -2,9 +2,9 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 
 use oxide_auth::{
-    primitives::generator::TagGrant,
-    endpoint::{WebRequest, WebResponse, OwnerConsent, QueryParameter, Solicitation},
-    primitives::grant::Grant,
+    OAuthOpaqueError,
+    endpoint::{OwnerConsent, QueryParameter, Solicitation, WebRequest, WebResponse},
+    primitives::{generator::TagGrant, grant::Grant},
 };
 use url::Url;
 
@@ -150,7 +150,7 @@ impl WebResponse for CraftedResponse {
 struct TestGenerator(String);
 
 impl TagGrant for TestGenerator {
-    fn tag(&mut self, _: u64, _grant: &Grant) -> Result<String, ()> {
+    fn tag(&mut self, _: u64, _grant: &Grant) -> Result<String, OAuthOpaqueError> {
         Ok(self.0.clone())
     }
 }

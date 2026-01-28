@@ -4,6 +4,7 @@ use std::borrow::Cow;
 
 use chrono::{Utc, Duration};
 
+use crate::OAuthOpaqueError;
 use crate::code_grant::accesstoken::BearerToken;
 use crate::code_grant::error::{AccessTokenError, AccessTokenErrorType};
 use crate::endpoint::{Scope, Solicitation};
@@ -64,11 +65,11 @@ pub trait Request {
 /// An endpoint not having any extension may use `&mut ()` as the result of system.
 pub trait Extension {
     /// Inspect the request to produce extension data.
-    fn extend(&mut self, request: &dyn Request) -> std::result::Result<Extensions, ()>;
+    fn extend(&mut self, request: &dyn Request) -> std::result::Result<Extensions, OAuthOpaqueError>;
 }
 
 impl Extension for () {
-    fn extend(&mut self, _: &dyn Request) -> std::result::Result<Extensions, ()> {
+    fn extend(&mut self, _: &dyn Request) -> std::result::Result<Extensions, OAuthOpaqueError> {
         Ok(Extensions::new())
     }
 }
@@ -408,7 +409,7 @@ impl Pending {
                 until: Utc::now() + Duration::minutes(10),
                 extensions: self.extensions,
             })
-            .map_err(|()| Error::Primitive(Box::new(PrimitiveError::empty())))?;
+            .map_err(|OAuthOpaqueError| Error::Primitive(Box::new(PrimitiveError::empty())))?;
 
         if !allow_refresh_token {
             token.refresh = None;

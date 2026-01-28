@@ -5,6 +5,7 @@ use std::result::Result as StdResult;
 use url::Url;
 use chrono::{Duration, Utc};
 
+use crate::OAuthOpaqueError;
 use crate::code_grant::error::{AuthorizationError, AuthorizationErrorType};
 use crate::primitives::authorizer::Authorizer;
 use crate::primitives::registrar::{ClientUrl, ExactUrl, Registrar, RegistrarError, PreGrant};
@@ -43,11 +44,11 @@ pub trait Request {
 /// An endpoint not having any extension may use `&mut ()` as the result of system.
 pub trait Extension {
     /// Inspect the request to produce extension data.
-    fn extend(&mut self, request: &dyn Request) -> std::result::Result<Extensions, ()>;
+    fn extend(&mut self, request: &dyn Request) -> std::result::Result<Extensions, OAuthOpaqueError>;
 }
 
 impl Extension for () {
-    fn extend(&mut self, _: &dyn Request) -> std::result::Result<Extensions, ()> {
+    fn extend(&mut self, _: &dyn Request) -> std::result::Result<Extensions, OAuthOpaqueError> {
         Ok(Extensions::new())
     }
 }
@@ -353,7 +354,7 @@ pub fn authorization_code(handler: &mut dyn Endpoint, request: &dyn Request) -> 
             Requested::Extend => {
                 let grant_extension = match handler.extension().extend(request) {
                     Ok(extension_data) => extension_data,
-                    Err(()) => {
+                    Err(OAuthOpaqueError) => {
                         let prepared_error = ErrorUrl::with_request(
                             request,
                             the_redirect_uri.unwrap().into(),
@@ -470,7 +471,7 @@ impl Pending {
                 until: Utc::now() + Duration::minutes(10),
                 extensions: self.extensions,
             })
-            .map_err(|()| Error::PrimitiveError)?;
+            .map_err(|OAuthOpaqueError| Error::PrimitiveError)?;
 
         url.query_pairs_mut()
             .append_pair("code", grant.as_str())
