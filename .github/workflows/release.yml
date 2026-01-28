@@ -1,0 +1,17 @@
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'release*'
+
+name: release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - run: ./release
