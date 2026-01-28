@@ -1,0 +1,140 @@
+on:
+  schedule:
+  - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+name: compatability
+
+jobs:
+  all-crates:
+    uses: ./.github/workflows/crates.yml
+
+  fmt:
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain:
+          - beta
+          - nightly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/master' }}
+      - name: Check code formatting
+        run: |
+          cargo fmt --all -- --check
+
+  lint:
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain:
+          - beta
+          - nightly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/master' }}
+      - name: Run clippy
+        run: |
+          cargo clippy \
+            --all-features \
+            --all-targets \
+            --keep-going \
+            --no-deps \
+            --workspace
+            -- \
+            -Dwarnings \
+
+  doc:
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain:
+          - beta
+          - nightly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/master' }}
+      - name: Build documentation
+        run: |
+          cargo doc \
+            --all-features \
+            --document-private-items \
+            --no-deps \
+            --workspace \
+
+  semver:
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain:
+          - beta
+          - nightly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - run: cargo install cargo-semver-checks --locked
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-bin: true
+          save-if: ${{ github.ref == 'refs/heads/master' }}
+      - name: Run cargo semver checks
+        run: cargo semver-checks --verbose --workspace
+
+  build-and-test:
+    needs: all-crates
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain:
+          - beta
+          - nightly
+        crate: ${{ fromJson(needs.all-crates.outputs.crates) }}
+    runs-on: ubuntu-latest
+    env:
+      OXIDE_AUTH_SKIP_REDIS: yes
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{matrix.toolchain}}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/master' }}
+      - name: Build "${{ matrix.crate }}"
+        run: |
+          cargo build \
+            --all-features \
+            --all-targets \
+            --package ${{ matrix.crate }} \
+            --verbose \
+
+      - name: Run ${{ matrix.crate }} tests
+        run: |
+          cargo test \
+          --all-features \
+          --package ${{ matrix.crate }} \
+          --verbose \
+

@@ -1,0 +1,24 @@
+on:
+  workflow_call:
+    outputs:
+      crates:
+        description: "List of crates in the workspace"
+        value: ${{ jobs.crates.outputs.crates }}
+    inputs:
+      kind:
+        description: "A regex matching the target kind"
+        default: lib|bin
+        type: string
+
+jobs:
+  crates:
+    runs-on: ubuntu-latest
+    outputs:
+      crates: ${{ steps.crates.outputs.crates }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - id: crates
+        run: echo crates=$(cargo metadata --no-deps --format-version 1 | jq '[.packages[] | select(.targets[].kind[0] | test("${{ inputs.kind }}")) | .name ]') >> $GITHUB_OUTPUT
+
+
