@@ -62,9 +62,6 @@ enum Status {
 /// Real HTTP protocols should set a content type header for each of the body variants.
 #[derive(Clone, Debug)]
 enum Body {
-    /// A pure text body.
-    Text(String),
-
     /// A json encoded body, `application/json`.
     Json(String),
 }
@@ -132,9 +129,8 @@ impl WebResponse for CraftedResponse {
     }
 
     /// A pure text response with no special media type set.
-    fn body_text(&mut self, text: &str) -> Result<(), Self::Error> {
-        self.body = Some(Body::Text(text.to_owned()));
-        Ok(())
+    fn body_text(&mut self, _: &str) -> Result<(), Self::Error> {
+        unimplemented!()
     }
 
     /// Json repsonse data, with media type `aplication/json.
